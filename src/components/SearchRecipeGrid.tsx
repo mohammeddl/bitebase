@@ -5,74 +5,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { allRecipes } from '@/lib/recipes';
+import WatchlistButton from '@/components/WatchlistButton';
 
 gsap.registerPlugin(ScrollTrigger);
-
-const allRecipes = [
-  {
-    id: '1',
-    title: 'Spicy Beef Mexican Tacos',
-    slug: 'spicy-beef-tacos',
-    img: '/images/home/hero-food.jpg',
-    tags: ['Mexican Food', 'Quick & Easy'],
-  },
-  {
-    id: '2',
-    title: 'Caprese Salad Skewers',
-    slug: 'caprese-salad-skewers',
-    img: '/images/home/featured-dish.jpg',
-    tags: ['Italian', 'Salads'],
-  },
-  {
-    id: '3',
-    title: 'Quinoa & Chickpea Buddha',
-    slug: 'quinoa-chickpea-buddha',
-    img: '/images/about/hero-pasta.jpg',
-    tags: ['Healthy', 'Plant-Based'],
-  },
-  {
-    id: '4',
-    title: 'Creamy Chicken Parmesan',
-    slug: 'chicken-parmesan',
-    img: '/images/about/chefs-team.jpg',
-    tags: ['Italian', 'Comfort Food'],
-  },
-  {
-    id: '5',
-    title: 'Mango Tango Smoothie',
-    slug: 'mango-smoothie',
-    img: '/images/about/grating-step.jpg',
-    tags: ['Drinks', 'Healthy'],
-  },
-  {
-    id: '6',
-    title: 'Chocolate Lava Cake',
-    slug: 'chocolate-lava-cake',
-    img: '/images/home/chef-woman.jpg',
-    tags: ['Desserts', 'Baking'],
-  },
-  {
-    id: '7',
-    title: 'Spinach and Feta Stuffed',
-    slug: 'spinach-feta',
-    img: '/images/about/chef-live.jpg',
-    tags: ['Vegetarian', 'Mediterranean'],
-  },
-  {
-    id: '8',
-    title: 'Thai Green Chicken Curry',
-    slug: 'thai-curry',
-    img: '/images/home/step-cutting.jpg',
-    tags: ['Asian', 'Spicy'],
-  },
-  {
-    id: '9',
-    title: 'Berry Bliss Delight Parfait',
-    slug: 'berry-parfait',
-    img: '/images/home/cooking-banner.jpg',
-    tags: ['Desserts', 'Fresh'],
-  },
-];
 
 function RecipeCard({ recipe }: { recipe: typeof allRecipes[0] }) {
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -111,6 +47,11 @@ function RecipeCard({ recipe }: { recipe: typeof allRecipes[0] }) {
 
       {/* Dark hover overlay */}
       <div ref={overlayRef} className="absolute inset-0 bg-black/45" style={{ opacity: 0 }} />
+
+      {/* Heart watchlist button — always top-right */}
+      <div className="absolute top-3 right-3 z-10 w-9 h-9 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center">
+        <WatchlistButton slug={recipe.slug} />
+      </div>
 
       {/* Top: title (slide down on hover) */}
       <div
@@ -179,33 +120,67 @@ export default function SearchRecipeGrid() {
         ))}
       </div>
 
-      {/* Pagination — premium style */}
-      <div className="mt-12 flex items-center justify-between">
-        {/* Previous */}
-        <button className="flex items-center gap-2 px-6 py-3 border border-gray-200 rounded-full text-sm font-semibold text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
-          ← Previous
-        </button>
+      {/* Pagination */}
+      <div className="mt-10">
 
-        {/* Page numbers */}
-        <div className="flex items-center gap-2">
-          {[1, 2, 3].map((n) => (
-            <button
-              key={n}
-              className={`w-10 h-10 rounded-full text-sm font-bold transition-all ${
-                n === 1
-                  ? 'bg-amber-500 text-white scale-110'
-                  : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              {n}
+        {/* ── Mobile pagination ── */}
+        <div className="flex sm:hidden flex-col items-center gap-4">
+          {/* Arrow row */}
+          <div className="flex items-center gap-4">
+            <button className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-colors text-lg">
+              ←
             </button>
-          ))}
+
+            {/* Dot indicators */}
+            <div className="flex items-center gap-2">
+              {[1, 2, 3].map((n) => (
+                <button
+                  key={n}
+                  className={`rounded-full transition-all duration-300 ${
+                    n === 1 ? 'w-6 h-2.5 bg-amber-500' : 'w-2.5 h-2.5 bg-gray-200'
+                  }`}
+                  aria-label={`Page ${n}`}
+                />
+              ))}
+            </div>
+
+            <button className="w-11 h-11 rounded-full bg-gray-900 hover:bg-amber-500 flex items-center justify-center text-white transition-colors text-lg">
+              →
+            </button>
+          </div>
+
+          {/* Load more pill */}
+          <button className="w-full max-w-xs flex items-center justify-center gap-2 border border-gray-200 rounded-full text-sm font-semibold text-gray-600 py-3 hover:bg-gray-50 transition-colors">
+            Load More Recipes
+          </button>
         </div>
 
-        {/* Next */}
-        <button className="flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-amber-500 text-white rounded-full text-sm font-semibold transition-colors">
-          Next →
-        </button>
+        {/* ── Desktop pagination ── */}
+        <div className="hidden sm:flex items-center justify-between">
+          <button className="flex items-center gap-2 px-6 py-3 border border-gray-200 rounded-full text-sm font-semibold text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
+            ← Previous
+          </button>
+
+          <div className="flex items-center gap-2">
+            {[1, 2, 3].map((n) => (
+              <button
+                key={n}
+                className={`w-10 h-10 rounded-full text-sm font-bold transition-all ${
+                  n === 1
+                    ? 'bg-amber-500 text-white scale-110'
+                    : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+
+          <button className="flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-amber-500 text-white rounded-full text-sm font-semibold transition-colors">
+            Next →
+          </button>
+        </div>
+
       </div>
 
     </div>

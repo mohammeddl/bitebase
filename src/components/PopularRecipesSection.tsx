@@ -54,6 +54,15 @@ const recipes = [
   },
 ];
 
+const GAP = 16; // px gap between cards
+
+function getVisibleCount(): number {
+  if (typeof window === 'undefined') return 3;
+  if (window.innerWidth < 640) return 1;
+  if (window.innerWidth < 1024) return 2;
+  return 3;
+}
+
 function RecipeCard({ recipe }: { recipe: typeof recipes[0] }) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const topContentRef = useRef<HTMLDivElement>(null);
@@ -76,8 +85,8 @@ function RecipeCard({ recipe }: { recipe: typeof recipes[0] }) {
 
   return (
     <div
-      className="recipe-card relative rounded-3xl overflow-hidden cursor-pointer flex-shrink-0"
-      style={{ height: '420px', width: 'calc(33.333% - 16px)' }}
+      className="recipe-card relative rounded-3xl overflow-hidden cursor-pointer shrink-0"
+      style={{ height: '380px' }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -98,12 +107,12 @@ function RecipeCard({ recipe }: { recipe: typeof recipes[0] }) {
         className="absolute top-0 left-0 right-0 p-6"
         style={{ opacity: 0, transform: 'translateY(-20px)' }}
       >
-        <h3 className="text-2xl font-black text-white leading-tight mb-3">{recipe.title}</h3>
+        <h3 className="text-xl font-black text-white leading-tight mb-2">{recipe.title}</h3>
         <p className="text-white/80 text-sm leading-relaxed">{recipe.desc}</p>
       </div>
 
       {/* Bottom: tags + button */}
-      <div className="absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-3">
+      <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col gap-3">
         <div
           ref={tagsRef}
           className="flex flex-wrap gap-2"
@@ -135,38 +144,74 @@ export default function PopularRecipesSection() {
   const currentRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [current, setCurrent] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(3);
 
-  const GAP = 24; // px — matches gap-6
-  const CARDS_PER_VIEW = 3;
-  const MAX_SLIDE = recipes.length - CARDS_PER_VIEW; // 3
+  const maxSlide = recipes.length - visibleCount;
 
+  // Compute pixel offset for a given slide index
   const getOffset = useCallback((index: number) => {
     const container = containerRef.current;
     if (!container) return 0;
-    const cardWidth = (container.offsetWidth - GAP * (CARDS_PER_VIEW - 1)) / CARDS_PER_VIEW;
+    const count = getVisibleCount();
+    const cardWidth = (container.offsetWidth - GAP * (count - 1)) / count;
     return -(index * (cardWidth + GAP));
   }, []);
 
+  // Update card widths based on container size
+  const updateCardWidths = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const count = getVisibleCount();
+    const cardWidth = (container.offsetWidth - GAP * (count - 1)) / count;
+    const cards = container.querySelectorAll<HTMLElement>('.recipe-card');
+    cards.forEach((card) => {
+      card.style.width = `${cardWidth}px`;
+    });
+    setVisibleCount(count);
+  }, []);
+
   const goTo = useCallback((index: number) => {
-    const clamped = Math.max(0, Math.min(index, MAX_SLIDE));
+    const count = getVisibleCount();
+    const max = recipes.length - count;
+    const clamped = Math.max(0, Math.min(index, max));
     currentRef.current = clamped;
     setCurrent(clamped);
     gsap.to(trackRef.current, { x: getOffset(clamped), duration: 0.8, ease: 'power2.inOut' });
-  }, [getOffset, MAX_SLIDE]);
+  }, [getOffset]);
 
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      const next = currentRef.current >= MAX_SLIDE ? 0 : currentRef.current + 1;
+      const count = getVisibleCount();
+      const max = recipes.length - count;
+      const next = currentRef.current >= max ? 0 : currentRef.current + 1;
       goTo(next);
     }, 3500);
-  }, [goTo, MAX_SLIDE]);
+  }, [goTo]);
 
   const handleNav = (dir: number) => {
     goTo(currentRef.current + dir);
-    startTimer(); // reset timer on manual nav
+    startTimer();
   };
 
+  // Init + resize
+  useEffect(() => {
+    updateCardWidths();
+    const onResize = () => {
+      updateCardWidths();
+      // After resize, recalculate position for current slide
+      const count = getVisibleCount();
+      const max = recipes.length - count;
+      const clamped = Math.min(currentRef.current, max);
+      currentRef.current = clamped;
+      setCurrent(clamped);
+      gsap.set(trackRef.current, { x: getOffset(clamped) });
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [updateCardWidths, getOffset]);
+
+  // Auto-slide timer
   useEffect(() => {
     startTimer();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
@@ -183,43 +228,44 @@ export default function PopularRecipesSection() {
     return () => ctx.revert();
   }, []);
 
+  const dotCount = maxSlide + 1;
+
   return (
     <section ref={sectionRef} className="py-14 bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-3xl md:text-4xl font-black text-gray-900">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900">
             Popular <span className="text-amber-500">Recipes</span> Today
           </h2>
-          <div className="flex items-center gap-3">
-            {/* Prev / Next */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => handleNav(-1)}
-              className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-colors"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-colors"
               aria-label="Previous"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => handleNav(1)}
-              className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-colors"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-colors"
               aria-label="Next"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={16} />
             </button>
             <Link
               href="/search"
-              className="hidden sm:inline-flex items-center gap-2 bg-gray-900 hover:bg-amber-500 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors ml-2"
+              className="hidden sm:inline-flex items-center gap-2 bg-gray-900 hover:bg-amber-500 text-white text-sm font-semibold px-4 py-2.5 rounded-full transition-colors ml-1"
             >
-              See More Recipes
+              See More
             </Link>
           </div>
         </div>
 
         {/* Slider */}
         <div ref={containerRef} className="overflow-hidden">
-          <div ref={trackRef} className="flex gap-6" style={{ willChange: 'transform' }}>
+          <div ref={trackRef} className="flex" style={{ gap: `${GAP}px`, willChange: 'transform' }}>
             {recipes.map((recipe) => (
               <RecipeCard key={recipe.slug} recipe={recipe} />
             ))}
@@ -228,7 +274,7 @@ export default function PopularRecipesSection() {
 
         {/* Dot indicators */}
         <div className="flex justify-center gap-2 mt-6">
-          {Array.from({ length: MAX_SLIDE + 1 }).map((_, i) => (
+          {Array.from({ length: dotCount }).map((_, i) => (
             <button
               key={i}
               onClick={() => { goTo(i); startTimer(); }}
@@ -238,6 +284,16 @@ export default function PopularRecipesSection() {
               aria-label={`Slide ${i + 1}`}
             />
           ))}
+        </div>
+
+        {/* Mobile: See all link */}
+        <div className="flex justify-center mt-5 sm:hidden">
+          <Link
+            href="/search"
+            className="inline-flex items-center gap-2 bg-gray-900 hover:bg-amber-500 text-white text-sm font-semibold px-6 py-3 rounded-full transition-colors"
+          >
+            See More Recipes →
+          </Link>
         </div>
 
       </div>
