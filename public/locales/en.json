@@ -1,0 +1,95 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "recipes": "Recipes",
+    "blog": "Blog",
+    "contact": "Contact",
+    "search": "Search recipes..."
+  },
+  "hero": {
+    "title": "Adventure of",
+    "titleHighlight": "Delicacies",
+    "description": "Unlock a world of variety culinary recipes and unleash your inner chef the easy way with FlavorBiz.",
+    "cta": "Explore Recipes"
+  },
+  "features": {
+    "userCentered": "User-Centered",
+    "userCenteredDesc": "Your feedback shapes us to create unique and satisfying culinary journey.",
+    "diverseRecipes": "Diverse Recipes",
+    "diverseRecipesDesc": "We celebrate diverse recipes from across the world, inspiring you today.",
+    "funCommunity": "Fun Community",
+    "funCommunityDesc": "Join a vibrant foodie community with sharing recipes with us."
+  },
+  "section": {
+    "popularRecipes": "Popular Recipes",
+    "today": "Today",
+    "featured": "Featured",
+    "browseCategories": "Browse by Category",
+    "viewRecipe": "See Complete Recipe",
+    "difficulty": "Difficulty",
+    "cookTime": "Cook Time",
+    "servings": "Servings"
+  },
+  "CTA": {
+    "title": "Become a true",
+    "titleHighlight": "chef",
+    "subtitle": "with our recipes.",
+    "description": "We are a home to variety of recipes worldwide for you to learn.",
+    "button": "Step In"
+  },
+  "chef": {
+    "tagline": "Cooking has never been this easy!",
+    "achievement": "Achievement",
+    "achievementCount": "15 Recipes Done",
+    "recipe": "Today's Recipe",
+    "recipeExample": "Spicy Samosas"
+  },
+  "masterChef": {
+    "title": "Cook with",
+    "titleHighlight": "Master Chefs",
+    "description": "Learn techniques, tips, and tricks from professional chefs in the kitchen."
+  },
+  "journal": {
+    "title": "Cooking Journal",
+    "subtitle": "Summer: Fresh Recipes to Delight Your Taste Buds from Our Favorites",
+    "viewMore": "See All & More"
+  },
+  "footer": {
+    "quickLinks": "Quick Links",
+    "categories": "Categories",
+    "legal": "Legal",
+    "follow": "Follow Us",
+    "copyright": "© 2026 Recipe Hub. All rights reserved."
+  },
+  "recipe": {
+    "ingredients": "Ingredients",
+    "instructions": "Instructions",
+    "nutrition": "Nutrition",
+    "prepTime": "Prep Time",
+    "cookTime": "Cook Time",
+    "servings": "Servings",
+    "difficulty": "Difficulty",
+    "rating": "Rating",
+    "reviews": "Reviews",
+    "addToCart": "Add to Shopping List"
+  },
+  "search": {
+    "title": "Search Recipes",
+    "description": "Find the perfect recipe using our advanced search and filter options.",
+    "placeholder": "Search by recipe name, ingredient, or cuisine...",
+    "filters": "Filters",
+    "difficulty": "Difficulty",
+    "cookTime": "Cook Time",
+    "category": "Category",
+    "rating": "Rating",
+    "applyFilters": "Apply Filters",
+    "results": "Showing"
+  },
+  "pages": {
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "about": "About Us",
+    "contact": "Contact Us"
+  }
+}

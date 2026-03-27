@@ -1,0 +1,95 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "about": "حول",
+    "recipes": "وصفات",
+    "blog": "مدونة",
+    "contact": "اتصل بنا",
+    "search": "ابحث عن الوصفات..."
+  },
+  "hero": {
+    "title": "مغامرة",
+    "titleHighlight": "اللذيذ",
+    "description": "اكتشف عالماً متنوعاً من الوصفات الطهوية واطلق العنان لطاهيك الداخلي بسهولة مع FlavorBiz.",
+    "cta": "استكشف الوصفات"
+  },
+  "features": {
+    "userCentered": "محاور المستخدم",
+    "userCenteredDesc": "تعليقاتك تشكلنا لإنشاء رحلة طهوية فريدة ومرضية.",
+    "diverseRecipes": "وصفات متنوعة",
+    "diverseRecipesDesc": "نحتفي بالوصفات المتنوعة من حول العالم، مما يلهمك اليوم.",
+    "funCommunity": "مجتمع ممتع",
+    "funCommunityDesc": "انضم إلى مجتمع عشاق الطعام النابض بالحياة وشارك الوصفات معنا."
+  },
+  "section": {
+    "popularRecipes": "الوصفات الشهيرة",
+    "today": "اليوم",
+    "featured": "مميز",
+    "browseCategories": "تصفح حسب الفئة",
+    "viewRecipe": "شاهد الوصفة الكاملة",
+    "difficulty": "مستوى الصعوبة",
+    "cookTime": "وقت الطهي",
+    "servings": "عدد الحصص"
+  },
+  "CTA": {
+    "title": "كن حقيقياً",
+    "titleHighlight": "طاهياً",
+    "subtitle": "مع وصفاتنا.",
+    "description": "نحن مركز متنوع من الوصفات في جميع أنحاء العالم لتعلمها.",
+    "button": "ابدأ"
+  },
+  "chef": {
+    "tagline": "الطهي لم يكن بهذه السهولة من قبل!",
+    "achievement": "الإنجاز",
+    "achievementCount": "تم 15 وصفة",
+    "recipe": "وصفة اليوم",
+    "recipeExample": "سمبوسة حارة"
+  },
+  "masterChef": {
+    "title": "اطبخ مع",
+    "titleHighlight": "الطهاة الرئيسيين",
+    "description": "تعلم التقنيات والنصائح والحيل من الطهاة المحترفين في المطبخ."
+  },
+  "journal": {
+    "title": "دفتر الطهي",
+    "subtitle": "الصيف: وصفات طازة لإسعاد براعم التذوق لديك من المفضلة لدينا",
+    "viewMore": "شاهد المزيد"
+  },
+  "footer": {
+    "quickLinks": "روابط سريعة",
+    "categories": "الفئات",
+    "legal": "قانوني",
+    "follow": "تابعنا",
+    "copyright": "© 2026 مركز الوصفات. جميع الحقوق محفوظة."
+  },
+  "recipe": {
+    "ingredients": "المكونات",
+    "instructions": "التعليمات",
+    "nutrition": "التغذية",
+    "prepTime": "وقت التحضير",
+    "cookTime": "وقت الطهي",
+    "servings": "عدد الحصص",
+    "difficulty": "مستوى الصعوبة",
+    "rating": "التقييم",
+    "reviews": "التقييمات",
+    "addToCart": "أضف إلى قائمة التسوق"
+  },
+  "search": {
+    "title": "البحث عن الوصفات",
+    "description": "ابحث عن الوصفة المثالية باستخدام خيارات البحث وتصفيتنا المتقدمة.",
+    "placeholder": "ابحث حسب اسم الوصفة أو المكون أو المطبخ...",
+    "filters": "المرشحات",
+    "difficulty": "مستوى الصعوبة",
+    "cookTime": "وقت الطهي",
+    "category": "الفئة",
+    "rating": "التقييم",
+    "applyFilters": "تطبيق المرشحات",
+    "results": "عرض"
+  },
+  "pages": {
+    "privacyPolicy": "سياسة الخصوصية",
+    "termsOfService": "شروط الخدمة",
+    "about": "معلومات عنا",
+    "contact": "اتصل بنا"
+  }
+}
