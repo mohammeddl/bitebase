@@ -1,149 +1,184 @@
 'use client';
 
-import Link from 'next/link';
+import Image from 'next/image';
+import PageAnimations from '@/components/PageAnimations';
+
+const contactInfo = [
+  {
+    label: 'Phone',
+    value: '(+555) 555-1234',
+    icon: '📞',
+  },
+  {
+    label: 'Email Address',
+    value: 'info@bitebase.com',
+    icon: '✉️',
+  },
+  {
+    label: 'Location',
+    value: '123 Culinary Street, Foodieville, CO 12345',
+    icon: '📍',
+  },
+];
 
 export default function Contact() {
   return (
-    <div className="min-h-screen" style={{ background: '#FFFBF5' }}>
+    <div className="min-h-screen bg-white">
+      <PageAnimations />
 
       {/* ─── Hero Banner ─── */}
-      <section className="bg-white border-b border-gray-100">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <p className="text-xs font-semibold tracking-widest text-amber-500 uppercase mb-4">Reach Out</p>
-              <h1 className="text-5xl font-black text-gray-900 leading-tight">
+      <section className="bg-white py-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div
+            className="relative rounded-3xl overflow-hidden"
+            style={{ background: '#F8F5F0', minHeight: '200px' }}
+          >
+            <div className="relative z-10 flex flex-col justify-center h-full px-10 py-12 max-w-sm">
+              <h1 data-gsap="hero" className="text-4xl md:text-5xl font-black text-gray-900 leading-tight">
                 Get in Touch<br />
-                with <span className="text-amber-500">Us</span>
+                <span className="text-amber-500">with</span> Us
               </h1>
             </div>
-            <div className="bg-amber-50 rounded-3xl h-44 flex items-center justify-center text-7xl">🥦</div>
+            <div className="absolute inset-y-0 right-0 w-1/2 lg:w-3/5">
+              <Image
+                src="/images/home/hero-food.jpg"
+                alt="Food"
+                fill
+                className="object-cover object-left"
+                priority
+              />
+              <div className="absolute inset-y-0 left-0 w-2/5 bg-linear-to-r from-[#F8F5F0] to-transparent" />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ─── Contact Content ─── */}
-      <section className="py-16">
+      {/* ─── Main Contact Block ─── */}
+      <section className="py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            {/* Left: Image + about */}
-            <div>
-              <div className="bg-amber-400 rounded-3xl h-64 flex items-center justify-center relative mb-8">
-                <div className="text-center">
-                  <div className="text-7xl mb-2">👨‍🍳</div>
-                </div>
-                <div className="absolute bottom-6 left-6 bg-white/90 rounded-xl px-4 py-2">
-                  <p className="text-sm font-bold text-gray-900">Contact Information</p>
-                </div>
+            {/* LEFT: Dark editorial panel */}
+            <div
+              data-gsap="slide-left"
+              className="relative rounded-3xl overflow-hidden flex flex-col justify-between p-10"
+              style={{ background: '#1A1A1A', minHeight: '520px' }}
+            >
+              {/* Background image — subtle overlay */}
+              <div className="absolute inset-0">
+                <Image
+                  src="/images/home/step-cutting.jpg"
+                  alt="Kitchen"
+                  fill
+                  className="object-cover opacity-20"
+                />
               </div>
 
-              <p className="text-gray-500 leading-relaxed mb-8">
-                Connect with culinary excellence effortlessly. Whether you have a burning question about a recipe or want to share your cooking triumphs, our dedicated team is just a message away for our food-loving community.
-              </p>
-
-              {/* Contact info cards */}
-              <div className="grid grid-cols-2 gap-6 mb-8">
-                <div>
-                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Phone</p>
-                  <p className="font-bold text-gray-900">(+555) 555-1234</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Email Address</p>
-                  <p className="font-bold text-gray-900">info@bitebase.com</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Location</p>
-                  <p className="font-bold text-gray-900">123 Culinary Street, Foodieville, Any State CO 12345</p>
-                </div>
+              {/* Content on top */}
+              <div className="relative z-10">
+                <p className="text-amber-500 text-xs font-bold tracking-widest uppercase mb-4">Contact Us</p>
+                <h2 className="text-3xl font-black text-white leading-tight mb-4">
+                  Let&rsquo;s Start a<br />
+                  <span className="text-amber-500">Conversation</span>
+                </h2>
+                <p className="text-white/60 text-sm leading-relaxed max-w-xs">
+                  Whether you have a burning question about a recipe or want to share your cooking triumphs, our team is here for you.
+                </p>
               </div>
 
-              {/* Map placeholder */}
-              <div className="bg-gray-100 rounded-2xl h-48 flex items-center justify-center border border-gray-200">
-                <div className="text-center text-gray-400">
-                  <div className="text-4xl mb-2">🗺️</div>
-                  <p className="text-sm font-medium">Map — New York, NY</p>
-                </div>
+              {/* Contact info items */}
+              <div className="relative z-10 space-y-5 mt-10">
+                {contactInfo.map((item) => (
+                  <div key={item.label} className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-base shrink-0">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className="text-white/40 text-xs mb-0.5">{item.label}</p>
+                      <p className="text-white font-bold text-sm">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
+
+              {/* Decorative amber circle */}
+              <div
+                className="absolute bottom-[-60px] right-[-60px] w-48 h-48 rounded-full opacity-10"
+                style={{ background: '#F59E0B' }}
+              />
             </div>
 
-            {/* Right: Form */}
-            <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-              <h2 className="text-2xl font-black text-gray-900 mb-2">Send Us a Message</h2>
-              <p className="text-gray-500 text-sm mb-8">
-                Have questions, suggestions, or recipes to share? We&apos;d love to hear from you.
+            {/* RIGHT: Form panel */}
+            <div
+              data-gsap="slide-right"
+              className="bg-gray-50 rounded-3xl p-10 flex flex-col justify-center"
+            >
+              <h2 className="text-2xl font-black text-gray-900 mb-2">Send a Message</h2>
+              <p className="text-gray-400 text-sm mb-8">
+                Fill in the form and we&apos;ll get back to you within 24 hours.
               </p>
 
-              <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="name" className="block text-xs font-semibold text-gray-700 mb-2">Name</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Full Name</label>
                     <input
                       type="text"
-                      id="name"
-                      placeholder="Your name"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition"
+                      placeholder="John Doe"
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-400 transition"
                     />
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-xs font-semibold text-gray-700 mb-2">Email</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email</label>
                     <input
                       type="email"
-                      id="email"
-                      placeholder="your@email.com"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition"
+                      placeholder="you@email.com"
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-400 transition"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="subject" className="block text-xs font-semibold text-gray-700 mb-2">Subject</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Subject</label>
                   <input
                     type="text"
-                    id="subject"
                     placeholder="What's this about?"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition"
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-400 transition"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="message" className="block text-xs font-semibold text-gray-700 mb-2">Message</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Message</label>
                   <textarea
-                    id="message"
                     rows={5}
-                    placeholder="Your message..."
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition resize-none"
+                    placeholder="Tell us how we can help..."
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-400 transition resize-none"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 px-6 rounded-full transition text-sm"
+                  className="w-full flex items-center justify-between bg-gray-900 hover:bg-amber-500 text-white font-bold py-4 px-6 rounded-full transition text-sm"
                 >
-                  Send Message →
+                  <span>Send Message</span>
+                  <span className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-xs">→</span>
                 </button>
               </form>
 
-              <div className="mt-8 pt-8 border-t border-gray-100">
-                <p className="text-sm font-semibold text-gray-900 mb-4">Follow us on social media:</p>
-                <div className="flex gap-3">
-                  {['Facebook', 'Instagram', 'Pinterest', 'YouTube'].map((s) => (
-                    <a
-                      key={s}
-                      href="#"
-                      className="text-xs text-amber-600 hover:text-amber-700 font-medium"
-                    >
-                      {s}
-                    </a>
-                  ))}
-                </div>
+              {/* Socials */}
+              <div className="mt-8 pt-6 border-t border-gray-200 flex items-center gap-4">
+                <p className="text-xs text-gray-400 font-semibold">Follow us:</p>
+                {['Instagram', 'Facebook', 'Pinterest', 'YouTube'].map((s) => (
+                  <a key={s} href="#" className="text-xs font-semibold text-gray-500 hover:text-amber-500 transition">
+                    {s}
+                  </a>
+                ))}
               </div>
             </div>
 
           </div>
         </div>
       </section>
-
     </div>
   );
 }
