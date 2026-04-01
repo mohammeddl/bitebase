@@ -1,25 +1,26 @@
-import { Metadata } from 'next';
-import { generateSEOMetadata } from '@/lib/seo';
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import PageAnimations from '@/components/PageAnimations';
 import SearchRecipeGrid from '@/components/SearchRecipeGrid';
-
-export const metadata: Metadata = generateSEOMetadata({
-  title: 'Browse Recipes | BiteBase',
-  description: 'Search and filter thousands of delicious recipes. Find the perfect dish for any occasion.',
-  keywords: ['search', 'filter', 'recipes', 'cooking'],
-});
-
-const categories = [
-  { label: 'All Types', active: true },
-  { label: 'Appetizers', active: false },
-  { label: 'Main Courses', active: false },
-  { label: 'Vegetarian Delights', active: false },
-  { label: 'International Flavors', active: false },
-  { label: 'Desserts & Sweets', active: false },
-];
+import CategoryFilter from '@/components/CategoryFilter';
 
 export default function SearchPage() {
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+    setCurrentPage(1); // Reset to first page when category changes
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <PageAnimations />
@@ -51,34 +52,43 @@ export default function SearchPage() {
         </div>
       </section>
 
-      {/* ─── What to Cook + Filters ─── */}
+      {/* ─── What to Cook + Search + Filters ─── */}
       <section className="pt-10 pb-4 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 data-gsap="fade-up" className="text-2xl font-black text-gray-900 text-center mb-6">
+          <h2 data-gsap="fade-up" className="text-2xl font-black text-gray-900 text-center mb-8">
             What <span className="text-amber-500">to</span> Cook?
           </h2>
-          <div data-gsap="stagger" className="flex flex-wrap justify-center gap-3 mb-10">
-            {categories.map((cat) => (
-              <button
-                key={cat.label}
-                className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-colors ${
-                  cat.active
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-amber-100 hover:text-amber-700'
-                }`}
-              >
-                {cat.active && <span className="w-2 h-2 bg-amber-400 rounded-full" />}
-                {cat.label}
-              </button>
-            ))}
+
+          {/* Search Bar */}
+          <div className="mb-8">
+            <div className="relative max-w-2xl mx-auto">
+              <input
+                type="text"
+                placeholder="Search for recipes..."
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-full px-5 py-3 pl-12 text-sm rounded-full border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+              />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            </div>
           </div>
+
+          {/* Category Filter */}
+          {!searchQuery && (
+            <CategoryFilter onCategoryChange={handleCategoryChange} activeCategory={activeCategory} />
+          )}
         </div>
       </section>
 
       {/* ─── Recipe Grid (GSAP hover) ─── */}
       <section className="pb-16 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SearchRecipeGrid />
+          <SearchRecipeGrid
+            category={activeCategory}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            searchQuery={searchQuery}
+          />
         </div>
       </section>
     </div>

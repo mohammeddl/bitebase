@@ -1,16 +1,15 @@
-'use client';
-
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { allRecipes } from '@/lib/recipes';
+import { allRecipes, Recipe } from '@/lib/recipes';
+import { searchRecipesByCategory, searchRecipes, type SpoonacularRecipe } from '@/lib/spoonacularAPI';
 import WatchlistButton from '@/components/WatchlistButton';
 
 gsap.registerPlugin(ScrollTrigger);
 
-function RecipeCard({ recipe }: { recipe: typeof allRecipes[0] }) {
+function RecipeCard({ recipe }: { recipe: Recipe | SpoonacularRecipe }) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const topContentRef = useRef<HTMLDivElement>(null);
   const tagsRef = useRef<HTMLDivElement>(null);
@@ -39,7 +38,12 @@ function RecipeCard({ recipe }: { recipe: typeof allRecipes[0] }) {
     >
       {/* Background image */}
       <div ref={imageRef} className="absolute inset-0 will-change-transform">
-        <Image src={recipe.img} alt={recipe.title} fill className="object-cover" />
+        <Image 
+          src={'img' in recipe ? recipe.img : recipe.image} 
+          alt={recipe.title} 
+          fill 
+          className="object-cover" 
+        />
       </div>
 
       {/* Always-on bottom gradient */}
@@ -50,7 +54,7 @@ function RecipeCard({ recipe }: { recipe: typeof allRecipes[0] }) {
 
       {/* Heart watchlist button — always top-right */}
       <div className="absolute top-3 right-3 z-10 w-9 h-9 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center">
-        <WatchlistButton slug={recipe.slug} />
+        <WatchlistButton slug={'slug' in recipe ? recipe.slug : String(recipe.id)} />
       </div>
 
       {/* Top: title (slide down on hover) */}
@@ -70,7 +74,7 @@ function RecipeCard({ recipe }: { recipe: typeof allRecipes[0] }) {
           className="flex flex-wrap gap-2"
           style={{ opacity: 0, transform: 'translateY(20px)' }}
         >
-          {recipe.tags.map((tag) => (
+          {'tags' in recipe && recipe.tags.map((tag) => (
             <span key={tag} className="bg-white text-gray-900 text-xs font-semibold px-3 py-1.5 rounded-full">
               {tag}
             </span>
@@ -79,7 +83,7 @@ function RecipeCard({ recipe }: { recipe: typeof allRecipes[0] }) {
 
         {/* Button: always visible */}
         <Link
-          href={`/recipe/${recipe.slug}`}
+          href={`/recipe/${'slug' in recipe ? recipe.slug : recipe.id}`}
           className="flex items-center justify-between w-full bg-gray-950 hover:bg-amber-500 text-white text-sm font-semibold px-5 py-3 rounded-full transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
@@ -91,8 +95,51 @@ function RecipeCard({ recipe }: { recipe: typeof allRecipes[0] }) {
   );
 }
 
-export default function SearchRecipeGrid() {
+export default function SearchRecipeGrid({
+  category = 'all',
+  currentPage = 1,
+  onPageChange,
+  searchQuery = '',
+}: {
+  category?: string;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
+  searchQuery?: string;
+}) {
   const gridRef = useRef<HTMLDivElement>(null);
+  const [recipes, setRecipes] = useState<(Recipe | SpoonacularRecipe)[]>([]);
+  const [loading, setLoading] = useState(true);
+  const RECIPES_PER_PAGE = 12;
+
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      setLoading(true);
+      try {
+        const offset = (currentPage - 1) * RECIPES_PER_PAGE;
+        let apiRecipes: SpoonacularRecipe[] = [];
+
+        // If searchQuery exists, use search instead of category
+        if (searchQuery.trim()) {
+          apiRecipes = await searchRecipes(searchQuery, RECIPES_PER_PAGE, offset);
+        } else {
+          apiRecipes = await searchRecipesByCategory(category, RECIPES_PER_PAGE, offset);
+        }
+
+        if (apiRecipes.length > 0) {
+          setRecipes(apiRecipes);
+        } else {
+          setRecipes(allRecipes.slice(offset, offset + RECIPES_PER_PAGE));
+        }
+      } catch (error) {
+        console.error('Failed to fetch recipes:', error);
+        setRecipes(allRecipes.slice((currentPage - 1) * RECIPES_PER_PAGE, currentPage * RECIPES_PER_PAGE));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecipes();
+  }, [category, currentPage, searchQuery]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -110,78 +157,95 @@ export default function SearchRecipeGrid() {
       });
     }, gridRef);
     return () => ctx.revert();
-  }, []);
+  }, [recipes]);
 
   return (
     <div ref={gridRef}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {allRecipes.map((recipe) => (
-          <RecipeCard key={recipe.id} recipe={recipe} />
-        ))}
-      </div>
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <div className="text-gray-600">Loading recipes...</div>
+        </div>
+      )}
+      
+      {!loading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {recipes.map((recipe) => (
+            <RecipeCard key={'id' in recipe ? recipe.id : recipe.id} recipe={recipe} />
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
-      <div className="mt-10">
+      {!loading && recipes.length > 0 && (
+        <div className="mt-10">
+          {/* ── Mobile pagination ── */}
+          <div className="flex sm:hidden flex-col items-center gap-4">
+            {/* Arrow row */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => onPageChange?.(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-colors text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ←
+              </button>
 
-        {/* ── Mobile pagination ── */}
-        <div className="flex sm:hidden flex-col items-center gap-4">
-          {/* Arrow row */}
-          <div className="flex items-center gap-4">
-            <button className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-colors text-lg">
-              ←
+              {/* Page indicator */}
+              <span className="text-sm font-semibold text-gray-600">
+                Page {currentPage}
+              </span>
+
+              <button
+                onClick={() => onPageChange?.(currentPage + 1)}
+                disabled={recipes.length < RECIPES_PER_PAGE}
+                className="w-11 h-11 rounded-full bg-gray-900 hover:bg-amber-500 flex items-center justify-center text-white transition-colors text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                →
+              </button>
+            </div>
+          </div>
+
+          {/* ── Desktop pagination ── */}
+          <div className="hidden sm:flex items-center justify-center gap-4 mt-12">
+            <button
+              onClick={() => onPageChange?.(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ← Previous
             </button>
 
-            {/* Dot indicators */}
-            <div className="flex items-center gap-2">
-              {[1, 2, 3].map((n) => (
-                <button
-                  key={n}
-                  className={`rounded-full transition-all duration-300 ${
-                    n === 1 ? 'w-6 h-2.5 bg-amber-500' : 'w-2.5 h-2.5 bg-gray-200'
-                  }`}
-                  aria-label={`Page ${n}`}
-                />
-              ))}
+            <div className="flex items-center gap-1.5">
+              {Array.from(
+                { length: Math.max(7, Math.floor(currentPage / 5) * 5 + 5) },
+                (_, i) => i + 1
+              )
+                .slice(Math.max(0, currentPage - 4), currentPage + 3)
+                .map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => onPageChange?.(n)}
+                    className={`min-w-[36px] h-9 rounded-lg text-sm font-bold transition-all ${
+                      currentPage === n
+                        ? 'bg-amber-500 text-white shadow-md hover:shadow-lg hover:bg-amber-600'
+                        : 'text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 hover:text-gray-900'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
             </div>
 
-            <button className="w-11 h-11 rounded-full bg-gray-900 hover:bg-amber-500 flex items-center justify-center text-white transition-colors text-lg">
-              →
+            <button
+              onClick={() => onPageChange?.(currentPage + 1)}
+              disabled={recipes.length < RECIPES_PER_PAGE}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-gray-900 hover:bg-amber-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next →
             </button>
           </div>
-
-          {/* Load more pill */}
-          <button className="w-full max-w-xs flex items-center justify-center gap-2 border border-gray-200 rounded-full text-sm font-semibold text-gray-600 py-3 hover:bg-gray-50 transition-colors">
-            Load More Recipes
-          </button>
         </div>
-
-        {/* ── Desktop pagination ── */}
-        <div className="hidden sm:flex items-center justify-between">
-          <button className="flex items-center gap-2 px-6 py-3 border border-gray-200 rounded-full text-sm font-semibold text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
-            ← Previous
-          </button>
-
-          <div className="flex items-center gap-2">
-            {[1, 2, 3].map((n) => (
-              <button
-                key={n}
-                className={`w-10 h-10 rounded-full text-sm font-bold transition-all ${
-                  n === 1
-                    ? 'bg-amber-500 text-white scale-110'
-                    : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-
-          <button className="flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-amber-500 text-white rounded-full text-sm font-semibold transition-colors">
-            Next →
-          </button>
-        </div>
-
-      </div>
+      )}
 
     </div>
   );
