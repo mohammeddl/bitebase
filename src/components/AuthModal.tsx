@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function AuthModal({ onClose }: Props) {
-  const { login, register, loginWithGoogle } = useAuth();
+  const { login, register, loginWithGoogle, resetPassword } = useAuth();
   const [mode, setMode] = useState<Mode>('login');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -33,11 +33,18 @@ export default function AuthModal({ onClose }: Props) {
 
     setLoading(true);
     try {
-      if (mode === 'login') await login(form.email, form.password);
-      else if (mode === 'register') await register(form.name, form.email, form.password);
-      else { setResetSent(true); setLoading(false); return; }
-      onClose();
-    } catch {
+      if (mode === 'login') {
+        await login(form.email, form.password);
+        onClose();
+      } else if (mode === 'register') {
+        await register(form.name, form.email, form.password);
+        onClose();
+      } else if (mode === 'reset') {
+        await resetPassword(form.email);
+        setResetSent(true);
+      }
+    } catch (err) {
+      console.error('Auth error:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);

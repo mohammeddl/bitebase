@@ -57,6 +57,7 @@ function RecipeCard({ recipe }: { recipe: Recipe | SpoonacularRecipe }) {
         <WatchlistButton 
           recipeId={typeof (recipe as any).id === 'string' ? parseInt((recipe as any).id, 10) : (recipe as any).id} 
           recipeName={recipe.title}
+          recipeImage={'img' in recipe ? (recipe as any).img : (recipe as any).image}
         />
       </div>
 

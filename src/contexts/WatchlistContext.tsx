@@ -4,14 +4,14 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { supabaseClient } from '@/lib/supabaseClient';
 
 interface WatchlistItem {
-  id: string;
   recipe_id: number;
   recipe_title: string;
+  recipe_image: string;
 }
 
 interface WatchlistCtx {
-  watchlist: number[]; // array of recipe IDs from database
-  toggle: (recipeId: number, recipeTitle: string) => Promise<void>;
+  watchlist: WatchlistItem[];
+  toggle: (recipeId: number, recipeTitle: string, recipeImage: string) => Promise<void>;
   isSaved: (recipeId: number) => boolean;
   count: number;
   isLoading: boolean;
@@ -20,7 +20,7 @@ interface WatchlistCtx {
 const WatchlistContext = createContext<WatchlistCtx | null>(null);
 
 export function WatchlistProvider({ children }: { children: ReactNode }) {
-  const [watchlist, setWatchlist] = useState<number[]>([]);
+  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load watchlist from Supabase on mount
@@ -33,11 +33,11 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
         if (user) {
           const { data, error } = await supabaseClient
             .from('watchlist')
-            .select('recipe_id')
+            .select('recipe_id, recipe_title, recipe_image')
             .eq('user_id', user.id);
           
           if (!error && data) {
-            setWatchlist(data.map((item) => item.recipe_id));
+            setWatchlist(data);
           }
         } else {
           setWatchlist([]);
@@ -52,7 +52,6 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
 
     loadWatchlist();
 
-    // Subscribe to auth changes
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(() => {
       loadWatchlist();
     });
@@ -62,7 +61,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const toggle = async (recipeId: number, recipeTitle: string) => {
+  const toggle = async (recipeId: number, recipeTitle: string, recipeImage: string) => {
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
       
@@ -71,7 +70,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const isInList = watchlist.includes(recipeId);
+      const isInList = watchlist.some((item) => item.recipe_id === recipeId);
 
       if (isInList) {
         // Remove from watchlist
@@ -82,7 +81,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
           .eq('recipe_id', recipeId);
         
         if (!error) {
-          setWatchlist(watchlist.filter((id) => id !== recipeId));
+          setWatchlist(watchlist.filter((item) => item.recipe_id !== recipeId));
         }
       } else {
         // Add to watchlist
@@ -93,11 +92,12 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
               user_id: user.id,
               recipe_id: recipeId,
               recipe_title: recipeTitle,
+              recipe_image: recipeImage,
             },
           ]);
         
         if (!error) {
-          setWatchlist([...watchlist, recipeId]);
+          setWatchlist([...watchlist, { recipe_id: recipeId, recipe_title: recipeTitle, recipe_image: recipeImage }]);
         }
       }
     } catch (err) {
@@ -105,7 +105,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isSaved = (recipeId: number) => watchlist.includes(recipeId);
+  const isSaved = (recipeId: number) => watchlist.some((item) => item.recipe_id === recipeId);
 
   return (
     <WatchlistContext.Provider

@@ -18,6 +18,7 @@ export async function signUpWithEmail(
     email,
     password,
     options: {
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
       data: {
         full_name: fullName,
       },
@@ -58,6 +59,36 @@ export async function signOut() {
   if (error) throw error;
 }
 
+// Request password reset email
+export async function resetPasswordForEmail(email: string) {
+  const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/auth/update-password`,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// Update password (used when in a valid recovery session)
+export async function updatePassword(password: string, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const { data, error } = await supabaseClient.auth.updateUser({
+        password: password,
+      });
+      if (error) throw error;
+      return data;
+    } catch (err: any) {
+      const isLockError = err.message?.includes('Lock') || err.message?.includes('stole it');
+      if (isLockError && i < retries - 1) {
+        // Wait 500ms before retrying
+        await new Promise(resolve => setTimeout(resolve, 500));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 // Get current user
 export async function getCurrentUser() {
   const { data, error } = await supabaseClient.auth.getUser();
@@ -67,14 +98,65 @@ export async function getCurrentUser() {
 
 // Get user profile
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
-  const { data, error } = await supabaseClient
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
+  try {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-  if (error && error.code !== 'PGRST116') throw error;
-  return data;
+    // If no profile exists, try to get user metadata and return a virtual profile or create one
+    if (error?.code === 'PGRST116' || !data) {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        const fallbackProfile: UserProfile = {
+          id: userId,
+          email: user.email || '',
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+          avatar_url: user.user_metadata?.avatar_url || null,
+          created_at: new Date().toISOString(),
+        };
+
+        // Attempt to create the profile record if it really doesn't exist
+        // We use .insert().select().single() and catch error in case the trigger already created it
+        try {
+          const { data: createdProfile, error: insertError } = await supabaseClient
+            .from('profiles')
+            .insert([{
+              id: userId,
+              email: fallbackProfile.email,
+              full_name: fallbackProfile.full_name,
+              avatar_url: fallbackProfile.avatar_url
+            }])
+            .select()
+            .single();
+          
+          if (!insertError && createdProfile) return createdProfile;
+          
+          // If insert failed (e.g. already exists), try fetching one last time
+          if (insertError) {
+             const { data: lastTry } = await supabaseClient
+              .from('profiles')
+              .select('*')
+              .eq('id', userId)
+              .single();
+             if (lastTry) return lastTry;
+          }
+        } catch (e) {
+          console.error('Silent error during profile sync:', e);
+        }
+        
+        return fallbackProfile;
+      }
+      return null;
+    }
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error getting user profile:', err);
+    return null;
+  }
 }
 
 // Update user profile with avatar

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { signInWithEmail, signInWithGoogle } from '@/lib/authUtils';
 
 export default function AuthLogin() {
@@ -62,11 +63,18 @@ export default function AuthLogin() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
         </div>
-
         <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2">
-            Password
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-semibold text-gray-900">
+              Password
+            </label>
+            <Link 
+              href="/auth/reset-password" 
+              className="text-sm font-semibold text-amber-500 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <input
             type="password"
             value={password}

@@ -50,9 +50,13 @@ CREATE TABLE watchlist (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   recipe_id INTEGER,
   recipe_title TEXT,
+  recipe_image TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(user_id, recipe_id)
 );
+
+-- NOTE: If you already have the watchlist table, run this instead:
+-- ALTER TABLE watchlist ADD COLUMN recipe_image TEXT;
 
 ALTER TABLE watchlist ENABLE ROW LEVEL SECURITY;
 
@@ -101,6 +105,44 @@ SUPABASE_SECRET_KEY=your_secret_key_here
 3. Name: `user-avatars`
 4. Access level: Public
 5. Click Create
+
+## Step 6: Automated Profile Creation (Recommended)
+
+To ensure a profile is created immediately when a user signs up (even before email confirmation), run this in your SQL Editor:
+
+```sql
+-- Trigger to create a profile when a user signs up
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, avatar_url)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
+    NEW.raw_user_meta_data->>'avatar_url'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+```
+
+## Step 7: Password Reset Configuration
+
+1. **Supabase Dashboard** → **Authentication** → **Email Templates**.
+2. Select **Reset Password**.
+3. In the **Redirect URL** field, make sure it points to your password update page:
+   ```
+   {{ .SiteURL }}/auth/callback?next=/auth/update-password
+   ```
+   *Note: If you are using the default Redirect URL, Supabase will handle this via the `redirectTo` option in the code, but it's good to ensure `http://localhost:3000/auth/update-password` is in your **Redirect URIs** list.*
+
+4. Go to **Authentication** → **URL Configuration**.
+5. Add `http://localhost:3000/auth/update-password` to the **Redirect URIs** if it's not already covered by a wildcard.
 
 ## Features Now Available
 

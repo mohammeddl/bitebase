@@ -216,10 +216,42 @@ export default function ProfilePage() {
               </Link>
             </div>
           ) : (
-            <div className="text-center py-12 bg-amber-50 rounded-3xl border border-amber-100">
-              <Heart size={32} className="text-amber-500 mx-auto mb-3" />
-              <p className="text-gray-700 font-semibold mb-2">You have {watchlist.length} saved recipe{watchlist.length !== 1 ? 's' : ''}</p>
-              <p className="text-sm text-gray-600">Your saved recipes are stored securely in our database.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {watchlist.map((item) => (
+                <div 
+                  key={item.recipe_id} 
+                  className="group relative bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all"
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <Image 
+                      src={item.recipe_image} 
+                      alt={item.recipe_title} 
+                      fill 
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-2 right-2">
+                      <button 
+                        onClick={() => toggle(item.recipe_id, item.recipe_title, item.recipe_image)}
+                        className="w-8 h-8 bg-black/40 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
+                        title="Remove from watchlist"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-sm font-black text-gray-900 leading-tight mb-3 line-clamp-2 min-h-[40px]">
+                      {item.recipe_title}
+                    </h3>
+                    <Link 
+                      href={`/recipe/${item.recipe_id}`}
+                      className="inline-flex items-center gap-2 text-xs font-bold text-amber-500 hover:text-amber-600 transition-colors"
+                    >
+                      View Recipe →
+                    </Link>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

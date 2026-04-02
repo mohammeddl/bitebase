@@ -6,10 +6,11 @@ import { useWatchlist } from '@/contexts/WatchlistContext';
 interface Props {
   recipeId: number;
   recipeName: string;
+  recipeImage: string;
   className?: string;
 }
 
-export default function WatchlistButton({ recipeId, recipeName, className = '' }: Props) {
+export default function WatchlistButton({ recipeId, recipeName, recipeImage, className = '' }: Props) {
   const { toggle, isSaved } = useWatchlist();
   const saved = isSaved(recipeId);
 
@@ -18,7 +19,7 @@ export default function WatchlistButton({ recipeId, recipeName, className = '' }
       onClick={(e) => { 
         e.preventDefault(); 
         e.stopPropagation(); 
-        toggle(recipeId, recipeName);
+        toggle(recipeId, recipeName, recipeImage);
       }}
       className={`flex items-center justify-center transition-all ${className}`}
       aria-label={saved ? 'Remove from watchlist' : 'Save to watchlist'}

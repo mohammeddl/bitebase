@@ -11,15 +11,26 @@ export default function AuthSignUp() {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
 
     try {
-      await signUpWithEmail(email, password, fullName);
-      router.push('/profile?step=complete-profile');
+      const data = await signUpWithEmail(email, password, fullName);
+      
+      // If session is null, email confirmation is likely enabled
+      if (data.user && !data.session) {
+        setSuccess('Account created! Please check your email to confirm your account before logging in.');
+        setEmail('');
+        setPassword('');
+        setFullName('');
+      } else {
+        router.push('/profile?step=complete-profile');
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to sign up');
     } finally {
@@ -29,6 +40,7 @@ export default function AuthSignUp() {
 
   const handleGoogleSignUp = async () => {
     setError(null);
+    setSuccess(null);
     setLoading(true);
 
     try {
@@ -45,6 +57,12 @@ export default function AuthSignUp() {
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
           {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm">
+          {success}
         </div>
       )}
 
