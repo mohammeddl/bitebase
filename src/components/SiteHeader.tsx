@@ -112,14 +112,14 @@ export default function SiteHeader() {
                     className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                   >
                     <div className="w-9 h-9 rounded-full overflow-hidden bg-amber-500 flex items-center justify-center text-white font-bold text-sm shrink-0 border-2 border-amber-200">
-                      {user.avatar ? (
-                        <Image src={user.avatar} alt={user.name} width={36} height={36} className="object-cover w-full h-full" />
+                      {user.avatar_url ? (
+                        <Image src={user.avatar_url} alt={user.full_name} width={36} height={36} className="object-cover w-full h-full" />
                       ) : (
-                        user.name.charAt(0).toUpperCase()
+                        user.full_name.charAt(0).toUpperCase()
                       )}
                     </div>
                     <span className="hidden sm:block text-sm font-semibold text-gray-900 max-w-[90px] truncate">
-                      {user.name.split(' ')[0]}
+                      {user.full_name.split(' ')[0]}
                     </span>
                     <ChevronDown size={14} className="text-gray-400" />
                   </button>
@@ -127,7 +127,7 @@ export default function SiteHeader() {
                   {showDropdown && (
                     <div className="absolute right-0 top-12 bg-white rounded-2xl shadow-xl border border-gray-100 w-52 py-2 z-50">
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-sm font-bold text-gray-900 truncate">{user.name}</p>
+                        <p className="text-sm font-bold text-gray-900 truncate">{user.full_name}</p>
                         <p className="text-xs text-gray-400 truncate">{user.email}</p>
                       </div>
                       <Link
@@ -201,12 +201,12 @@ export default function SiteHeader() {
             {isLoggedIn && user && (
               <div className="flex items-center gap-3 px-6 py-4 bg-amber-50 border-b border-amber-100">
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-amber-500 flex items-center justify-center text-white font-bold shrink-0">
-                  {user.avatar ? (
-                    <Image src={user.avatar} alt={user.name} width={40} height={40} className="object-cover w-full h-full" />
-                  ) : user.name.charAt(0).toUpperCase()}
+                  {user.avatar_url ? (
+                    <Image src={user.avatar_url} alt={user.full_name} width={40} height={40} className="object-cover w-full h-full" />
+                  ) : user.full_name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-gray-900 truncate">{user.name}</p>
+                  <p className="text-sm font-bold text-gray-900 truncate">{user.full_name}</p>
                   <p className="text-xs text-gray-400 truncate">{user.email}</p>
                 </div>
               </div>

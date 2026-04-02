@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { generateSEOMetadata } from '@/lib/seo';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Users, UtensilsCrossed, Star, Zap } from 'lucide-react';
+import { UtensilsCrossed, Star, Zap } from 'lucide-react';
 import PageAnimations from '@/components/PageAnimations';
 
 export const metadata: Metadata = generateSEOMetadata({
@@ -11,10 +11,10 @@ export const metadata: Metadata = generateSEOMetadata({
 });
 
 const stats = [
-  { value: '1 Million+', label: 'Registered BiteBase Users', amber: true },
-  { value: '5,000+', label: 'Verified Chefs in Community', amber: false },
+  { value: '1 Million+', label: 'Food Lovers Worldwide', amber: true },
+  { value: '10,000+', label: 'Officially Published Recipes', amber: false },
   { value: '98%', label: 'User Satisfaction Rate', amber: false },
-  { value: '10,000+', label: 'Officially Published Recipes', amber: true },
+  { value: '50,000+', label: 'Recipe Reviews & Ratings', amber: true },
 ];
 
 const missionCards = [
@@ -111,8 +111,8 @@ export default function About() {
                   power of cooking and good food
                 </h2>
                 <p className="text-gray-400 text-sm leading-relaxed max-w-2xl">
-                  We are a home to variety of recipes worldwide for you to learn to have an opportunity to savor life.
-                  Our platform is a celebration of culinary diversity, bringing together home cooks and food enthusiasts.
+                  We provide a curated collection of recipes from around the world, helping you discover and master new culinary skills.
+                  Our mission is to make cooking accessible, enjoyable, and inspiring for everyone.
                 </p>
               </div>
 
@@ -192,9 +192,9 @@ export default function About() {
                 img: '/images/about/hero-pasta.jpg',
               },
               {
-                value: '5,000+',
-                label: 'Verified Chefs in Community',
-                desc: 'Professional chefs sharing authentic recipes every day.',
+                value: '10,000+',
+                label: 'Officially Published Recipes',
+                desc: 'Tested and verified recipes you can trust to turn out great every time.',
                 bg: '#1A1A1A',
                 img: '/images/about/chef-live.jpg',
               },
@@ -289,8 +289,8 @@ export default function About() {
           <div data-gsap="stagger" className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {[
               {
-                num: '01', icon: <Users size={20} color="#fff" />, title: 'Fun Community',
-                desc: 'We foster a vibrant foodie community where joy comes from sharing recipes with us.',
+                num: '01', icon: <UtensilsCrossed size={20} color="#fff" />, title: 'Recipe Discovery',
+                desc: 'Explore thousands of delicious recipes carefully curated and tested for your kitchen success.',
                 dark: true,
               },
               {

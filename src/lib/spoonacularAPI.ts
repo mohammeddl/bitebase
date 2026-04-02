@@ -27,6 +27,13 @@ export interface SpoonacularRecipeDetail extends SpoonacularRecipe {
       number: number;
     }>;
   }>;
+  nutrition?: {
+    nutrients: Array<{
+      name: string;
+      amount: number;
+      unit: string;
+    }>;
+  };
 }
 
 const API_KEY = process.env.NEXT_PUBLIC_SPOONACULAR_API_KEY;
@@ -112,7 +119,7 @@ export async function getRecipeById(
   try {
     const response = await apiClient.get(`/${id}/information`, {
       params: {
-        includeNutrition: false,
+        includeNutrition: true,
       },
     });
 

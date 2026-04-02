@@ -6,6 +6,7 @@ import { LenisScroll } from '@/components/LenisScroll';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { WatchlistProvider } from '@/contexts/WatchlistContext';
 import SiteHeader from '@/components/SiteHeader';
+import { BackgroundAudio } from '@/components/BackgroundAudio';
 
 export const metadata: Metadata = {
   title: SITE_NAME,
@@ -25,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="min-h-full flex flex-col" style={{ background: '#FFFBF5', fontFamily: "'Inter', sans-serif" }}>
+        <BackgroundAudio />
         <WatchlistProvider>
         <AuthProvider>
 
@@ -47,7 +49,7 @@ export default function RootLayout({
                   BITE<span className="text-amber-500">BASE</span>
                 </p>
                 <p className="text-sm leading-relaxed mb-5">
-                  Join BiteBase now and embark on a culinary journey to explore, create, and savor amazing recipes!
+                  Discover thousands of delicious recipes, from quick weeknight meals to gourmet masterpieces.
                 </p>
                 <div className="flex items-center gap-2">
                   <input
@@ -63,15 +65,15 @@ export default function RootLayout({
                 </div>
               </div>
 
-              {/* Company */}
+              {/* Recipes */}
               <div>
-                <h3 className="text-white font-semibold mb-4">Company</h3>
+                <h3 className="text-white font-semibold mb-4">Recipes</h3>
                 <ul className="space-y-2 text-sm">
                   {[
+                    { href: '/search', label: 'Browse Recipes' },
+                    { href: '/search', label: 'Categories' },
                     { href: '/about', label: 'About Us' },
-                    { href: '/about', label: 'Our Stories' },
-                    { href: '/about', label: 'Work with Us' },
-                    { href: '/about', label: 'User Testimonials' },
+                    { href: '/contact', label: 'Contact' },
                   ].map((item) => (
                     <li key={item.label}>
                       <Link href={item.href} className="hover:text-amber-500 transition-colors">{item.label}</Link>
@@ -80,15 +82,15 @@ export default function RootLayout({
                 </ul>
               </div>
 
-              {/* Support */}
+              {/* Help */}
               <div>
-                <h3 className="text-white font-semibold mb-4">Support</h3>
+                <h3 className="text-white font-semibold mb-4">Help</h3>
                 <ul className="space-y-2 text-sm">
                   {[
                     { href: '/contact', label: 'FAQ' },
-                    { href: '/contact', label: 'Membership' },
-                    { href: '/privacy-policy', label: 'User Policy' },
-                    { href: '/contact', label: 'Customer Support' },
+                    { href: '/contact', label: 'Contact Us' },
+                    { href: '/privacy-policy', label: 'Privacy Policy' },
+                    { href: '/terms-of-service', label: 'Terms of Service' },
                   ].map((item) => (
                     <li key={item.label}>
                       <Link href={item.href} className="hover:text-amber-500 transition-colors">{item.label}</Link>

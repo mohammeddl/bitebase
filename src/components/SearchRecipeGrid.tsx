@@ -54,7 +54,10 @@ function RecipeCard({ recipe }: { recipe: Recipe | SpoonacularRecipe }) {
 
       {/* Heart watchlist button — always top-right */}
       <div className="absolute top-3 right-3 z-10 w-9 h-9 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center">
-        <WatchlistButton slug={'slug' in recipe ? recipe.slug : String(recipe.id)} />
+        <WatchlistButton 
+          recipeId={typeof (recipe as any).id === 'string' ? parseInt((recipe as any).id, 10) : (recipe as any).id} 
+          recipeName={recipe.title}
+        />
       </div>
 
       {/* Top: title (slide down on hover) */}
@@ -170,7 +173,7 @@ export default function SearchRecipeGrid({
       {!loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {recipes.map((recipe) => (
-            <RecipeCard key={'id' in recipe ? recipe.id : recipe.id} recipe={recipe} />
+            <RecipeCard key={recipe.id} recipe={recipe} />
           ))}
         </div>
       )}

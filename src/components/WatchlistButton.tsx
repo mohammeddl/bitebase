@@ -4,17 +4,22 @@ import { Heart } from 'lucide-react';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 
 interface Props {
-  slug: string;
+  recipeId: number;
+  recipeName: string;
   className?: string;
 }
 
-export default function WatchlistButton({ slug, className = '' }: Props) {
+export default function WatchlistButton({ recipeId, recipeName, className = '' }: Props) {
   const { toggle, isSaved } = useWatchlist();
-  const saved = isSaved(slug);
+  const saved = isSaved(recipeId);
 
   return (
     <button
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(slug); }}
+      onClick={(e) => { 
+        e.preventDefault(); 
+        e.stopPropagation(); 
+        toggle(recipeId, recipeName);
+      }}
       className={`flex items-center justify-center transition-all ${className}`}
       aria-label={saved ? 'Remove from watchlist' : 'Save to watchlist'}
     >

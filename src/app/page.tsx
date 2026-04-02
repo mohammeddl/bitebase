@@ -2,10 +2,9 @@ import { Metadata } from 'next';
 import { generateSEOMetadata, SITE_NAME, SITE_DESCRIPTION } from '@/lib/seo';
 import Link from 'next/link';
 import Image from 'next/image';
-import { User, UtensilsCrossed, Heart, Trophy, Tv, BookOpen } from 'lucide-react';
+import { UtensilsCrossed, Heart, Trophy, BookOpen } from 'lucide-react';
 import PopularRecipesSection from '@/components/PopularRecipesSection';
-import PageAnimations from '@/components/PageAnimations';
-
+import PageAnimations from '@/components/PageAnimations';import FeaturedRecipeCard from '@/components/FeaturedRecipeCard';
 export const metadata: Metadata = generateSEOMetadata({
   title: `${SITE_NAME} - Discover Amazing Recipes`,
   description: SITE_DESCRIPTION,
@@ -14,26 +13,26 @@ export const metadata: Metadata = generateSEOMetadata({
 
 const features = [
   {
-    icon: <User size={18} />,
-    title: 'User-Centered',
-    desc: 'Your feedback shapes our platform, ensuring a seamless and satisfying culinary journey.',
+    icon: <Heart size={18} />,
+    title: 'Diverse Recipes',
+    desc: 'Explore thousands of recipes celebrating culinary traditions from around the world.',
   },
   {
     icon: <UtensilsCrossed size={18} />,
-    title: 'Diverse Recipes',
-    desc: 'We celebrate diverse culinary traditions from around the world, inspiring you today.',
+    title: 'Easy to Follow',
+    desc: 'Step-by-step instructions and clear ingredients make cooking simple for everyone.',
   },
   {
-    icon: <Heart size={18} />,
-    title: 'Fun Community',
-    desc: 'We foster a vibrant foodie community where joy comes from sharing recipes with us.',
+    icon: <Trophy size={18} />,
+    title: 'Tested & Trusted',
+    desc: 'Every recipe has been verified and tested to ensure perfect results every time.',
   },
 ];
 
 const missionItems = [
   { icon: <Trophy size={16} />, label: 'Achievement', sub: 'Cook 2 foods today' },
-  { icon: <Tv size={16} />, label: 'Live Now', sub: 'Chef Mark Johnson' },
   { icon: <BookOpen size={16} />, label: "Today's Recipe", sub: 'Spaghetti Bolognese' },
+  { icon: <UtensilsCrossed size={16} />, label: 'Quick Tips', sub: 'Master new techniques' },
 ];
 
 export default function Home() {
@@ -71,8 +70,8 @@ export default function Home() {
                   href="/search"
                   className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 hover:border-gray-900 font-semibold py-3 px-6 rounded-full transition-colors text-sm"
                 >
-                  Get Our Mobile App
-                  <span className="text-xs">↓</span>
+                  Browse Categories
+                  <span className="text-xs">→</span>
                 </Link>
               </div>
             </div>
@@ -111,34 +110,7 @@ export default function Home() {
             </div>
 
             {/* Featured recipe card */}
-            <div data-gsap="fade-in" className="lg:w-72 border border-gray-100 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-              <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0">
-                <Image
-                  src="/images/home/featured-dish.jpg"
-                  alt="Featured recipe"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-1">Featured</p>
-                <p className="text-sm font-black text-gray-900 leading-tight mb-1">
-                  Salisbury Steak and Asparagus
-                </p>
-                {/* Audio waveform decoration */}
-                <div className="flex items-center gap-1 my-2">
-                  {[3,5,8,6,9,5,4,7,5,3,6,8,4].map((h, i) => (
-                    <div key={i} className="w-0.5 bg-gray-300 rounded-full" style={{ height: `${h}px` }} />
-                  ))}
-                  <div className="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center ml-1 shrink-0">
-                    <span className="text-white text-[8px]">▶</span>
-                  </div>
-                </div>
-                <Link href="/search" className="text-xs text-amber-500 font-semibold hover:underline">
-                  See Recipe →
-                </Link>
-              </div>
-            </div>
+            <FeaturedRecipeCard />
 
           </div>
         </div>
@@ -218,24 +190,20 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Col 4: LIVE chef image card — tallest */}
+            {/* Col 4: Featured recipe tips card — tallest */}
             <div className="relative rounded-3xl overflow-hidden" style={{ minHeight: '360px' }}>
               <Image
                 src="/images/home/chef-woman.jpg"
-                alt="Cook with master chefs"
+                alt="Quick recipe tips"
                 fill
                 className="object-cover object-top"
               />
               <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent" />
-              <div className="absolute top-4 left-4 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-                <span className="text-white text-xs font-bold">LIVE</span>
-              </div>
-              <div className="absolute top-4 right-4 bg-black/50 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
-                👁 100+
+              <div className="absolute top-4 left-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                Quick Tips
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-5">
-                <p className="text-white font-black text-lg leading-tight">Cook with<br />Master Chefs</p>
+                <p className="text-white font-black text-lg leading-tight">Master Recipe<br />Techniques</p>
               </div>
             </div>
 
@@ -262,30 +230,7 @@ export default function Home() {
             {/* Content on top of image */}
             <div className="relative z-10 flex flex-col justify-between h-full px-10 py-8" style={{ minHeight: '240px' }}>
 
-              {/* Top-right: community card */}
-              <div className="flex justify-end">
-                <div className="bg-white rounded-2xl shadow-md px-4 py-3 flex flex-col gap-2 min-w-[180px]">
-                  <p className="text-xs font-black text-gray-900">Join Our Community</p>
-                  <p className="text-xs text-gray-400">1,000+ Members</p>
-                  <div className="flex items-center">
-                    {['#E0C3A0', '#C8A882', '#B08558'].map((c, i) => (
-                      <span
-                        key={i}
-                        className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold"
-                        style={{ background: c, marginLeft: i > 0 ? '-6px' : '0' }}
-                      >
-                        {['A', 'B', 'C'][i]}
-                      </span>
-                    ))}
-                    <span
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                      style={{ background: '#F59E0B', marginLeft: '-6px' }}
-                    >
-                      +
-                    </span>
-                  </div>
-                </div>
-              </div>
+
 
               {/* Bottom: heading + buttons */}
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mt-8">
@@ -304,7 +249,7 @@ export default function Home() {
                     href="/search"
                     className="inline-flex items-center gap-2 bg-white/20 hover:bg-white hover:text-gray-900 text-white text-sm font-semibold px-5 py-3 rounded-full transition-colors border border-white/50"
                   >
-                    Share Your Recipe
+                    Browse All Recipes
                     <span className="text-xs">→</span>
                   </Link>
                 </div>
@@ -324,7 +269,7 @@ export default function Home() {
               <h2 className="text-4xl font-black text-white mb-3">
                 Your Ultimate Place<br />to <span className="text-amber-500">Better Cooking</span>
               </h2>
-              <p className="text-gray-400">Join our community and get exclusive recipes weekly.</p>
+              <p className="text-gray-400">Get the best recipes delivered to your inbox every week.</p>
             </div>
             <div className="flex gap-3">
               <input

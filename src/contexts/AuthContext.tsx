@@ -1,81 +1,180 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabaseClient } from '@/lib/supabaseClient';
+import * as authUtils from '@/lib/authUtils';
 
 export interface UserProfile {
-  name: string;
+  id?: string;
+  full_name: string;
   email: string;
-  avatar: string | null; // base64 or URL
-  bio: string;
+  avatar_url: string | null;
 }
 
 interface AuthState {
   user: UserProfile | null;
   isLoggedIn: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  logout: () => void;
-  updateProfile: (updates: Partial<UserProfile>) => void;
+  logout: () => Promise<void>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 
-const STORAGE_KEY = 'bitebase_user';
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load from localStorage on mount
+  // Sync with Supabase auth state on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setUser(JSON.parse(stored));
-    } catch {}
+    const initAuth = async () => {
+      try {
+        setIsLoading(true);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (session?.user) {
+          const profile = await authUtils.getUserProfile(session.user.id);
+          if (profile) {
+            setUser({
+              id: session.user.id,
+              full_name: profile.full_name || '',
+              email: profile.email || '',
+              avatar_url: profile.avatar_url || null,
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load auth state:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        try {
+          const profile = await authUtils.getUserProfile(session.user.id);
+          if (profile) {
+            setUser({
+              id: session.user.id,
+              full_name: profile.full_name || '',
+              email: profile.email || '',
+              avatar_url: profile.avatar_url || null,
+            });
+          }
+        } catch (err) {
+          console.error('Failed to sync user profile:', err);
+        }
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
-  const persist = (u: UserProfile | null) => {
-    if (u) localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
-    else localStorage.removeItem(STORAGE_KEY);
-    setUser(u);
+  const login = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      await authUtils.signInWithEmail(email, password);
+      const { data: { user: authUser } } = await supabaseClient.auth.getUser();
+      if (authUser) {
+        const profile = await authUtils.getUserProfile(authUser.id);
+        if (profile) {
+          setUser({
+            id: authUser.id,
+            full_name: profile.full_name || '',
+            email: profile.email || '',
+            avatar_url: profile.avatar_url || null,
+          });
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const login = async (email: string, _password: string) => {
-    // Simulated auth — in production connect to real backend
-    const profile: UserProfile = {
-      name: email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-      email,
-      avatar: null,
-      bio: '',
-    };
-    persist(profile);
-  };
-
-  const register = async (name: string, email: string, _password: string) => {
-    const profile: UserProfile = { name, email, avatar: null, bio: '' };
-    persist(profile);
+  const register = async (name: string, email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      await authUtils.signUpWithEmail(email, password, name);
+      const { data: { user: authUser } } = await supabaseClient.auth.getUser();
+      if (authUser) {
+        const profile = await authUtils.getUserProfile(authUser.id);
+        if (profile) {
+          setUser({
+            id: authUser.id,
+            full_name: profile.full_name || '',
+            email: profile.email || '',
+            avatar_url: profile.avatar_url || null,
+          });
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const loginWithGoogle = async () => {
-    const profile: UserProfile = {
-      name: 'Google User',
-      email: 'user@gmail.com',
-      avatar: null,
-      bio: '',
-    };
-    persist(profile);
+    try {
+      setIsLoading(true);
+      await authUtils.signInWithGoogle();
+      // User will be redirected to /auth/callback which handles the rest
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const logout = () => persist(null);
+  const logout = async () => {
+    try {
+      setIsLoading(true);
+      await supabaseClient.auth.signOut();
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const updateProfile = (updates: Partial<UserProfile>) => {
-    if (!user) return;
-    const updated = { ...user, ...updates };
-    persist(updated);
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user?.id) return;
+    
+    try {
+      setIsLoading(true);
+      await authUtils.updateUserProfile(user.id, {
+        full_name: updates.full_name || user.full_name,
+        avatar_url: updates.avatar_url ?? user.avatar_url,
+      });
+      
+      setUser({
+        ...user,
+        ...updates,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn: !!user, login, register, loginWithGoogle, logout, updateProfile }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoggedIn: !!user,
+        isLoading,
+        login,
+        register,
+        loginWithGoogle,
+        logout,
+        updateProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

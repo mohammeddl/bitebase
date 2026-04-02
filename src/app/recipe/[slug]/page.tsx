@@ -3,12 +3,82 @@ import { generateSEOMetadata } from '@/lib/seo';
 import Link from 'next/link';
 import Image from 'next/image';
 import PageAnimations from '@/components/PageAnimations';
+import { getRecipeById, searchRecipes } from '@/lib/spoonacularAPI';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
 async function getRecipe(slug: string) {
+  // Try to parse slug as recipe ID
+  const recipeId = parseInt(slug, 10);
+  
+  if (!isNaN(recipeId)) {
+    try {
+      const apiRecipe = await getRecipeById(recipeId);
+      if (apiRecipe) {
+        // Parse nutrition data from API
+        const nutritionMap: { [key: string]: string } = {
+          calories: 'N/A',
+          protein: 'N/A',
+          fat: 'N/A',
+          carbs: 'N/A',
+          fiber: 'N/A',
+          sugars: 'N/A',
+        };
+
+        // Extract nutrition values from API response
+        if (apiRecipe.nutrition?.nutrients) {
+          apiRecipe.nutrition.nutrients.forEach((nutrient: any) => {
+            const name = nutrient.name.toLowerCase();
+            if (name.includes('calor')) {
+              nutritionMap.calories = `${Math.round(nutrient.amount)} ${nutrient.unit}`;
+            } else if (name.includes('protein')) {
+              nutritionMap.protein = `${nutrient.amount.toFixed(1)} ${nutrient.unit}`;
+            } else if (name.includes('fat') && !name.includes('saturated')) {
+              nutritionMap.fat = `${nutrient.amount.toFixed(1)} ${nutrient.unit}`;
+            } else if (name.includes('carbohydrate')) {
+              nutritionMap.carbs = `${nutrient.amount.toFixed(1)} ${nutrient.unit}`;
+            } else if (name.includes('fiber')) {
+              nutritionMap.fiber = `${nutrient.amount.toFixed(1)} ${nutrient.unit}`;
+            } else if (name.includes('sugar')) {
+              nutritionMap.sugars = `${nutrient.amount.toFixed(1)} ${nutrient.unit}`;
+            }
+          });
+        }
+
+        return {
+          id: apiRecipe.id,
+          title: apiRecipe.title,
+          slug: slug,
+          description: apiRecipe.summary ? apiRecipe.summary.replace(/<[^>]*>/g, '') : 'A delicious recipe.',
+          img: apiRecipe.image,
+          chefImg: '/images/home/chef-woman.jpg',
+          chefName: 'From Spoonacular',
+          cookTime: `${apiRecipe.readyInMinutes} Minutes`,
+          prepTime: `${Math.round(apiRecipe.readyInMinutes * 0.4)} Minutes`,
+          servings: `${apiRecipe.servings} Persons`,
+          difficulty: 'Medium Level',
+          cuisine: 'International',
+          rating: 4.5,
+          reviews: 0,
+          tags: ['Delicious', 'Tasty', 'Well Prepared'],
+          ingredients: apiRecipe.extendedIngredients
+            .map((ing) => ing.original)
+            .slice(0, 12),
+          instructions: apiRecipe.analyzedInstructions[0]
+            ? apiRecipe.analyzedInstructions[0].steps.map((step) => step.step).slice(0, 8)
+            : ['Follow the recipe instructions carefully.'],
+          instructionImg: apiRecipe.image,
+          nutrition: nutritionMap,
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching recipe:', error);
+    }
+  }
+
+  // Fallback to mock data
   return {
     id: slug,
     title: 'Caprese Salad Skewers',
@@ -53,15 +123,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateSEOMetadata({
     title: `${recipe.title} Recipe | BiteBase`,
     description: recipe.description,
-    keywords: [recipe.title, recipe.category, 'recipe', 'cooking', slug],
+    keywords: [recipe.title, recipe.category ?? 'recipe', 'recipe', 'cooking', slug].filter(Boolean),
   });
 }
 
-const relatedRecipes = [
-  { title: 'Spicy Beef Mexican Tacos', slug: 'spicy-beef-tacos', img: '/images/home/hero-food.jpg' },
-  { title: 'Quinoa & Chickpea Buddha', slug: 'quinoa-chickpea-buddha', img: '/images/about/hero-pasta.jpg' },
-  { title: 'Creamy Chicken Parmesan', slug: 'chicken-parmesan', img: '/images/about/chefs-team.jpg' },
-];
+async function getRelatedRecipes(recipeTitle: string) {
+  try {
+    // Search for related recipes using keywords from the main recipe
+    const keywords = recipeTitle.split(' ')[0]; // Get first word as search term
+    const results = await searchRecipes(keywords, 3, 0);
+    
+    return results.map((recipe) => ({
+      title: recipe.title,
+      slug: String(recipe.id),
+      img: recipe.image,
+    }));
+  } catch (error) {
+    console.error('Error fetching related recipes:', error);
+    // Fallback to mock data
+    return [
+      { title: 'Spicy Beef Mexican Tacos', slug: 'spicy-beef-tacos', img: '/images/home/hero-food.jpg' },
+      { title: 'Quinoa & Chickpea Buddha', slug: 'quinoa-chickpea-buddha', img: '/images/about/hero-pasta.jpg' },
+      { title: 'Creamy Chicken Parmesan', slug: 'chicken-parmesan', img: '/images/about/chefs-team.jpg' },
+    ];
+  }
+}
 
 const cookingReviews = [
   {
@@ -75,6 +161,7 @@ const cookingReviews = [
 export default async function RecipePage({ params }: Props) {
   const { slug } = await params;
   const recipe = await getRecipe(slug);
+  const relatedRecipes = await getRelatedRecipes(recipe.title);
 
   return (
     <div className="min-h-screen bg-white">
@@ -158,14 +245,6 @@ export default async function RecipePage({ params }: Props) {
                       {tag}
                     </span>
                   ))}
-                </div>
-                <div className="flex gap-3 mt-5">
-                  <button className="flex items-center gap-2 bg-gray-900 hover:bg-amber-500 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition">
-                    📄 Download Recipe PDF
-                  </button>
-                  <button className="w-10 h-10 border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-amber-500 hover:border-amber-300 transition text-sm">
-                    ↗
-                  </button>
                 </div>
               </div>
 

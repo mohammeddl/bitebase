@@ -16,14 +16,14 @@ export default function ProfilePage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
-    name: user?.name ?? '',
+    full_name: user?.full_name ?? '',
     email: user?.email ?? '',
-    bio: user?.bio ?? '',
   });
   const [saved, setSaved] = useState(false);
 
-  // Saved recipes data — match slugs in watchlist
-  const savedRecipes = allRecipes.filter((r) => watchlist.includes(r.slug));
+  // Saved recipes data — the watchlist contains recipe IDs from Spoonacular API
+  // For now, we'll display a message since allRecipes is mock data
+  // In production, you'd fetch the actual recipes from Spoonacular using the IDs
 
   if (!isLoggedIn || !user) {
     return (
@@ -40,20 +40,23 @@ export default function ProfilePage() {
     );
   }
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target?.result as string;
-      updateProfile({ avatar: base64 });
-    };
-    reader.readAsDataURL(file);
+    try {
+      const { uploadAvatar } = await import('@/lib/authUtils');
+      if (user?.id) {
+        const avatar_url = await uploadAvatar(user.id, file);
+        updateProfile({ avatar_url });
+      }
+    } catch (err) {
+      console.error('Failed to upload avatar:', err);
+    }
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile(form);
+    updateProfile({ full_name: form.full_name });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -76,9 +79,9 @@ export default function ProfilePage() {
               {/* Avatar */}
               <div className="relative shrink-0">
                 <div className="w-20 h-20 rounded-2xl overflow-hidden bg-amber-500 flex items-center justify-center text-white text-3xl font-black border-4 border-white/20">
-                  {user.avatar ? (
-                    <Image src={user.avatar} alt={user.name} width={80} height={80} className="object-cover w-full h-full" />
-                  ) : user.name.charAt(0).toUpperCase()}
+                  {user.avatar_url ? (
+                    <Image src={user.avatar_url} alt={user.full_name} width={80} height={80} className="object-cover w-full h-full" />
+                  ) : user.full_name.charAt(0).toUpperCase()}
                 </div>
                 <button
                   onClick={() => fileRef.current?.click()}
@@ -89,7 +92,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <h1 data-gsap="hero" className="text-2xl font-black text-white">{user.name}</h1>
+                <h1 data-gsap="hero" className="text-2xl font-black text-white">{user.full_name}</h1>
                 <p className="text-white/50 text-sm">{user.email}</p>
                 {watchlist.length > 0 && (
                   <p className="text-amber-400 text-xs mt-1 font-semibold">
@@ -117,8 +120,8 @@ export default function ProfilePage() {
                 onClick={() => fileRef.current?.click()}
                 className="w-36 h-36 rounded-3xl overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-amber-400 transition-colors relative group"
               >
-                {user.avatar ? (
-                  <Image src={user.avatar} alt={user.name} width={144} height={144} className="object-cover w-full h-full" />
+                {user.avatar_url ? (
+                  <Image src={user.avatar_url} alt={user.full_name} width={144} height={144} className="object-cover w-full h-full" />
                 ) : (
                   <div className="text-center text-gray-400">
                     <Camera size={28} className="mx-auto mb-1" />
@@ -153,8 +156,8 @@ export default function ProfilePage() {
                   <label className="block text-xs font-semibold text-gray-600 mb-1.5">Full Name</label>
                   <input
                     type="text"
-                    value={form.name}
-                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    value={form.full_name}
+                    onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-400 transition"
                     placeholder="Your full name"
                   />
@@ -167,16 +170,6 @@ export default function ProfilePage() {
                     onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-400 transition"
                     placeholder="your@email.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Bio</label>
-                  <textarea
-                    value={form.bio}
-                    onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
-                    rows={4}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-400 transition resize-none"
-                    placeholder="Tell us about your cooking style..."
                   />
                 </div>
                 <button
@@ -210,7 +203,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {savedRecipes.length === 0 ? (
+          {watchlist.length === 0 ? (
             <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-3xl">
               <Heart size={40} className="text-gray-200 mx-auto mb-4" />
               <p className="text-lg font-bold text-gray-400 mb-2">No saved recipes yet</p>
@@ -223,43 +216,10 @@ export default function ProfilePage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {savedRecipes.map((recipe) => (
-                <article key={recipe.slug} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
-                  <div className="relative" style={{ height: '180px' }}>
-                    <Image
-                      src={recipe.img}
-                      alt={recipe.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    {/* Remove from watchlist */}
-                    <button
-                      onClick={() => toggle(recipe.slug)}
-                      className="absolute top-2.5 right-2.5 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-red-50 transition-colors"
-                    >
-                      <Trash2 size={13} className="text-red-400" />
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-sm font-black text-gray-900 mb-3 leading-snug">{recipe.title}</h3>
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {recipe.tags.map((tag) => (
-                        <span key={tag} className="text-[10px] text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-full">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <Link
-                      href={`/recipe/${recipe.slug}`}
-                      className="flex items-center justify-between w-full bg-gray-950 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2.5 rounded-full transition-colors"
-                    >
-                      <span>See Recipe</span>
-                      <span>🍳</span>
-                    </Link>
-                  </div>
-                </article>
-              ))}
+            <div className="text-center py-12 bg-amber-50 rounded-3xl border border-amber-100">
+              <Heart size={32} className="text-amber-500 mx-auto mb-3" />
+              <p className="text-gray-700 font-semibold mb-2">You have {watchlist.length} saved recipe{watchlist.length !== 1 ? 's' : ''}</p>
+              <p className="text-sm text-gray-600">Your saved recipes are stored securely in our database.</p>
             </div>
           )}
         </div>
