@@ -1,8 +1,9 @@
 import { Metadata } from 'next';
-import { generateSEOMetadata } from '@/lib/seo';
+import { generateSEOMetadata, generateRecipeJsonLd } from '@/lib/seo';
 import Link from 'next/link';
 import Image from 'next/image';
 import PageAnimations from '@/components/PageAnimations';
+import JsonLd from '@/components/JsonLd';
 import { getRecipeById, searchRecipes } from '@/lib/spoonacularAPI';
 
 interface Props {
@@ -162,9 +163,11 @@ export default async function RecipePage({ params }: Props) {
   const { slug } = await params;
   const recipe = await getRecipe(slug);
   const relatedRecipes = await getRelatedRecipes(recipe.title);
+  const recipeJsonLd = generateRecipeJsonLd(recipe);
 
   return (
     <div className="min-h-screen bg-white">
+      <JsonLd data={recipeJsonLd} />
       <PageAnimations />
 
       {/* ─── Hero Header ─── */}

@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
-import { generateSEOMetadata, SITE_NAME } from '@/lib/seo';
+import { generateSEOMetadata, SITE_NAME, generateBreadcrumbJsonLd } from '@/lib/seo';
 import Link from 'next/link';
+import JsonLd from '@/components/JsonLd';
 
 interface Props {
   params: Promise<{
@@ -68,9 +69,15 @@ export default async function CategoryPage({ params }: Props) {
   const { slug } = await params;
   const category = await getCategory(slug);
   const recipes = await getCategoryRecipes(slug);
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: 'Home', url: '/' },
+    { name: 'Recipes', url: '/search' },
+    { name: category.name, url: `/category/${slug}` },
+  ]);
 
   return (
     <main className="min-h-screen bg-white">
+      <JsonLd data={breadcrumbJsonLd} />
       {/* Category Header */}
       <section className="bg-linear-to-r from-orange-50 to-red-50 py-12 md:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

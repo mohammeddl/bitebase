@@ -8,7 +8,9 @@ import { WatchlistProvider } from '@/contexts/WatchlistContext';
 import SiteHeader from '@/components/SiteHeader';
 import { BackgroundAudio } from '@/components/BackgroundAudio';
 import AIPromoPopup from '@/components/AIPromoPopup';
+import JsonLd from '@/components/JsonLd';
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: {
@@ -136,7 +138,7 @@ export default function RootLayout({
             </div>
 
             <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
-              <p>© 2024 BiteBase. All rights reserved.</p>
+              <p>© 2026 BiteBase. All rights reserved.</p>
               <div className="flex gap-4">
                 <Link href="/privacy-policy" className="hover:text-amber-500 transition">Privacy Policy</Link>
                 <Link href="/terms-of-service" className="hover:text-amber-500 transition">Terms of Service</Link>
@@ -148,6 +150,19 @@ export default function RootLayout({
         </AuthProvider>
         </WatchlistProvider>
         <Analytics />
+        <SpeedInsights />
+        <JsonLd data={{
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: SITE_NAME,
+          url: SITE_URL,
+          logo: `${SITE_URL}/logo.png`, // Placeholder for future logo
+          sameAs: [
+            'https://facebook.com/bitebase',
+            'https://instagram.com/bitebase',
+            'https://twitter.com/bitebase'
+          ]
+        }} />
       </body>
     </html>
   );
