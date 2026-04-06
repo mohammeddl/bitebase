@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { WatchlistProvider } from '@/contexts/WatchlistContext';
 import SiteHeader from '@/components/SiteHeader';
 import { BackgroundAudio } from '@/components/BackgroundAudio';
+import AIPromoPopup from '@/components/AIPromoPopup';
 
 export const metadata: Metadata = {
   title: SITE_NAME,
@@ -25,13 +26,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-full flex flex-col" style={{ background: '#FFFBF5', fontFamily: "'Inter', sans-serif" }}>
+      <body suppressHydrationWarning className="min-h-full flex flex-col" style={{ background: '#FFFBF5', fontFamily: "'Inter', sans-serif" }}>
         <BackgroundAudio />
         <WatchlistProvider>
         <AuthProvider>
 
           {/* ─── Header ─── */}
           <SiteHeader />
+
+          {/* ─── Global Promotional Popups ─── */}
+          <AIPromoPopup />
 
           {/* ─── Page Content ─── */}
           <LenisScroll>

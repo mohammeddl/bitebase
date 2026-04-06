@@ -7,11 +7,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import AuthModal from '@/components/AuthModal';
 import { LogOut, User, ChevronDown, Menu, X, Heart } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const navLinks = [
   { href: '/', label: 'HOME' },
   { href: '/about', label: 'ABOUT' },
   { href: '/search', label: 'RECIPES' },
+  { href: '/ai-chef', label: 'AI CHEF' },
   { href: '/contact', label: 'CONTACT' },
 ];
 
@@ -83,6 +85,22 @@ export default function SiteHeader() {
               {/* Watchlist icon */}
               <Link
                 href="/profile"
+                onClick={(e) => {
+                  if (!isLoggedIn) {
+                    e.preventDefault();
+                    Swal.fire({
+                      icon: 'info',
+                      title: 'Authentication Required',
+                      text: 'Please sign in or create an account to view your Watchlist!',
+                      confirmButtonColor: '#f59e0b',
+                      confirmButtonText: 'Sign In'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        setShowModal(true);
+                      }
+                    });
+                  }
+                }}
                 className="relative w-9 h-9 rounded-full bg-gray-100 hover:bg-amber-50 flex items-center justify-center transition-colors"
                 title="My Watchlist"
               >
@@ -93,6 +111,7 @@ export default function SiteHeader() {
                   </span>
                 )}
               </Link>
+
 
               {/* Logged out: Sign In button — hidden on mobile (use burger) */}
               {!isLoggedIn && (
