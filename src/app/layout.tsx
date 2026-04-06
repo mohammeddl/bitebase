@@ -8,6 +8,7 @@ import { WatchlistProvider } from '@/contexts/WatchlistContext';
 import SiteHeader from '@/components/SiteHeader';
 import { BackgroundAudio } from '@/components/BackgroundAudio';
 import AIPromoPopup from '@/components/AIPromoPopup';
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: {
@@ -142,6 +143,7 @@ export default function RootLayout({
 
         </AuthProvider>
         </WatchlistProvider>
+        <Analytics />
       </body>
     </html>
   );
