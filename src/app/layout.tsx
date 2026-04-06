@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   },
   verification: {
     google: 'GSC_VERIFICATION_TOKEN_HERE', // Update this after GSC setup
+    yandex: 'YANDEX_VERIFICATION_TOKEN_HERE', // Update this after Yandex setup
+    other: {
+      'msvalidate.01': 'BING_VERIFICATION_TOKEN_HERE', // Update this after Bing setup
+    },
   },
 };
 

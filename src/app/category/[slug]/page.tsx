@@ -72,7 +72,7 @@ export default async function CategoryPage({ params }: Props) {
   return (
     <main className="min-h-screen bg-white">
       {/* Category Header */}
-      <section className="bg-gradient-to-r from-orange-50 to-red-50 py-12 md:py-16">
+      <section className="bg-linear-to-r from-orange-50 to-red-50 py-12 md:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Link href="/" className="text-orange-600 hover:text-orange-700 mb-4 inline-block">
             ← Back to Home
