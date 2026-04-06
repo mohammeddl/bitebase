@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import './globals.css';
-import { SITE_NAME, SITE_DESCRIPTION } from '@/lib/seo';
+import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from '@/lib/seo';
 import { LenisScroll } from '@/components/LenisScroll';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { WatchlistProvider } from '@/contexts/WatchlistContext';
@@ -10,8 +10,18 @@ import { BackgroundAudio } from '@/components/BackgroundAudio';
 import AIPromoPopup from '@/components/AIPromoPopup';
 
 export const metadata: Metadata = {
-  title: SITE_NAME,
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
   description: SITE_DESCRIPTION,
+  metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: '/',
+  },
+  verification: {
+    google: 'GSC_VERIFICATION_TOKEN_HERE', // Update this after GSC setup
+  },
 };
 
 export const viewport: Viewport = {

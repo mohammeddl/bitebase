@@ -41,6 +41,6 @@ export function generateSEOMetadata(seo: SEOMetadata): Metadata {
   return metadata;
 }
 
-export const SITE_NAME = 'Recipe Hub';
-export const SITE_DESCRIPTION = 'Discover delicious recipes, cooking tips, and culinary inspiration.';
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://recipehub.com';
+export const SITE_NAME = 'BiteBase';
+export const SITE_DESCRIPTION = 'BiteBase is your ultimate culinary companion, offering thousands of delicious recipes, expert cooking tips, and a magic AI chef to transform your ingredients into masterpieces.';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://bitebase.com';

@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { generateSEOMetadata } from '@/lib/seo';
+import { generateSEOMetadata, SITE_NAME } from '@/lib/seo';
 import Link from 'next/link';
 
 interface Props {
@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const category = await getCategory(slug);
 
   return generateSEOMetadata({
-    title: `${category.name} Recipes | Recipe Hub`,
+    title: `${category.name} Recipes | ${SITE_NAME}`,
     description: category.description,
     keywords: [category.name, 'recipes', 'cooking', slug],
   });
