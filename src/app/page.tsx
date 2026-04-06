@@ -67,11 +67,11 @@ export default function Home() {
                   <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">▶</span>
                 </Link>
                 <Link
-                  href="/search"
+                  href="/ai-chef"
                   className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 hover:border-gray-900 font-semibold py-3 px-6 rounded-full transition-colors text-sm"
                 >
-                  Browse Categories
-                  <span className="text-xs">→</span>
+                  Try AI Chef
+                  <span className="text-xs">🪄</span>
                 </Link>
               </div>
             </div>

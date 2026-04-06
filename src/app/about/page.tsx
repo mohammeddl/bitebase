@@ -196,14 +196,14 @@ export default function About() {
                 label: 'Officially Published Recipes',
                 desc: 'Tested and verified recipes you can trust to turn out great every time.',
                 bg: '#1A1A1A',
-                img: '/images/about/chef-live.jpg',
+                img: '/images/home/chef-woman.jpg',
               },
               {
                 value: '98%',
                 label: 'User Satisfaction Rate',
                 desc: 'Our users love the experience we craft for them.',
                 bg: '#1A1A1A',
-                img: '/images/about/grating-step.jpg',
+                img: '/images/home/step-cutting.jpg',
               },
               {
                 value: '10,000+',
