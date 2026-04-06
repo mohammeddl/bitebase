@@ -31,69 +31,75 @@ function RecipeCard({ recipe }: { recipe: Recipe | SpoonacularRecipe }) {
 
   return (
     <article
-      className="search-recipe-card relative rounded-3xl overflow-hidden cursor-pointer bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
+      className="search-recipe-card relative rounded-3xl overflow-hidden cursor-pointer bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow group"
       style={{ height: '360px' }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Background image */}
-      <div ref={imageRef} className="absolute inset-0 will-change-transform">
-        <Image 
-          src={'img' in recipe ? recipe.img : recipe.image} 
-          alt={recipe.title} 
-          fill 
-          className="object-cover" 
-        />
-      </div>
+      <Link href={`/recipe/${'slug' in recipe ? recipe.slug : recipe.id}`} className="block h-full w-full">
+        {/* Background image */}
+        <div ref={imageRef} className="absolute inset-0 will-change-transform">
+          <Image 
+            src={'img' in recipe ? recipe.img : recipe.image} 
+            alt={recipe.title} 
+            fill 
+            className="object-cover" 
+          />
+        </div>
 
-      {/* Always-on bottom gradient */}
-      <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent" />
+        {/* Always-on bottom gradient */}
+        <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent" />
 
-      {/* Dark hover overlay */}
-      <div ref={overlayRef} className="absolute inset-0 bg-black/45" style={{ opacity: 0 }} />
+        {/* Dark hover overlay */}
+        <div ref={overlayRef} className="absolute inset-0 bg-black/45" style={{ opacity: 0 }} />
+
+        {/* Top: title (slide down on hover) */}
+        <div
+          ref={topContentRef}
+          className="absolute top-0 left-0 right-0 p-5"
+          style={{ opacity: 0, transform: 'translateY(-20px)' }}
+        >
+          <h3 className="text-xl font-black text-white leading-tight group-hover:text-amber-400 transition-colors">{recipe.title}</h3>
+        </div>
+
+        {/* Bottom: tags + button */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col gap-3">
+          {/* Tags: slide up on hover */}
+          <div
+            ref={tagsRef}
+            className="flex flex-wrap gap-2"
+            style={{ opacity: 0, transform: 'translateY(20px)' }}
+          >
+            {'tags' in recipe && recipe.tags.map((tag) => (
+              <span key={tag} className="bg-white text-gray-900 text-xs font-semibold px-3 py-1.5 rounded-full">
+                {tag}
+              </span>
+            ))}
+          </div>
+
+          {/* Button: always visible */}
+          <div
+            className="flex items-center justify-between w-full bg-gray-950 group-hover:bg-amber-500 text-white text-sm font-semibold px-5 py-3 rounded-full transition-colors"
+          >
+            <span>See Complete Recipe</span>
+            <span className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-base">🍳</span>
+          </div>
+        </div>
+      </Link>
 
       {/* Heart watchlist button — always top-right */}
-      <div className="absolute top-3 right-3 z-10 w-9 h-9 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center">
+      <div 
+        className="absolute top-3 right-3 z-10 w-9 h-9 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
         <WatchlistButton 
           recipeId={typeof (recipe as any).id === 'string' ? parseInt((recipe as any).id, 10) : (recipe as any).id} 
           recipeName={recipe.title}
           recipeImage={'img' in recipe ? (recipe as any).img : (recipe as any).image}
         />
-      </div>
-
-      {/* Top: title (slide down on hover) */}
-      <div
-        ref={topContentRef}
-        className="absolute top-0 left-0 right-0 p-5"
-        style={{ opacity: 0, transform: 'translateY(-20px)' }}
-      >
-        <h3 className="text-xl font-black text-white leading-tight">{recipe.title}</h3>
-      </div>
-
-      {/* Bottom: tags + button */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col gap-3">
-        {/* Tags: slide up on hover */}
-        <div
-          ref={tagsRef}
-          className="flex flex-wrap gap-2"
-          style={{ opacity: 0, transform: 'translateY(20px)' }}
-        >
-          {'tags' in recipe && recipe.tags.map((tag) => (
-            <span key={tag} className="bg-white text-gray-900 text-xs font-semibold px-3 py-1.5 rounded-full">
-              {tag}
-            </span>
-          ))}
-        </div>
-
-        {/* Button: always visible */}
-        <Link
-          href={`/recipe/${'slug' in recipe ? recipe.slug : recipe.id}`}
-          className="flex items-center justify-between w-full bg-gray-950 hover:bg-amber-500 text-white text-sm font-semibold px-5 py-3 rounded-full transition-colors"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span>See Complete Recipe</span>
-          <span className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-base">🍳</span>
-        </Link>
       </div>
     </article>
   );

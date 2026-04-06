@@ -393,26 +393,27 @@ export default async function RecipePage({ params }: Props) {
                 key={r.slug}
                 className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
               >
-                <div className="px-4 pt-4 pb-2">
-                  <h3 className="text-base font-black text-gray-900 leading-snug">{r.title}</h3>
-                </div>
-                <div className="relative mx-3 rounded-2xl overflow-hidden" style={{ height: '180px' }}>
-                  <Image
-                    src={r.img}
-                    alt={r.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div className="px-3 py-3">
-                  <Link
-                    href={`/recipe/${r.slug}`}
-                    className="flex items-center justify-between w-full bg-gray-950 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2.5 rounded-full transition-colors"
-                  >
-                    <span>See Complete Recipe</span>
-                    <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">🍳</span>
-                  </Link>
-                </div>
+                <Link href={`/recipe/${r.slug}`} className="block">
+                  <div className="px-4 pt-4 pb-2">
+                    <h3 className="text-base font-black text-gray-900 group-hover:text-amber-600 transition-colors leading-snug">{r.title}</h3>
+                  </div>
+                  <div className="relative mx-3 rounded-2xl overflow-hidden" style={{ height: '180px' }}>
+                    <Image
+                      src={r.img}
+                      alt={r.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="px-3 py-3">
+                    <div
+                      className="flex items-center justify-between w-full bg-gray-950 group-hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2.5 rounded-full transition-colors"
+                    >
+                      <span>See Complete Recipe</span>
+                      <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">🍳</span>
+                    </div>
+                  </div>
+                </Link>
               </article>
             ))}
           </div>

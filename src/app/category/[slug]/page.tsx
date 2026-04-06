@@ -134,27 +134,33 @@ export default async function CategoryPage({ params }: Props) {
             {recipes.map((recipe) => (
               <article
                 key={recipe.id}
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition overflow-hidden"
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition overflow-hidden group"
               >
-                <div className="bg-gray-300 h-48 flex items-center justify-center text-gray-500">
-                  {recipe.image}
-                </div>
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                      {recipe.difficulty}
-                    </span>
+                <Link href={`/recipe/${recipe.slug}`}>
+                  <div className="bg-gray-300 h-48 flex items-center justify-center text-gray-500 overflow-hidden">
+                    {/* Assuming recipe.image is a string path, but the mock uses it as content? Actually in mock it was {recipe.image}. 
+                        Looking at the mock data, it was a path. If it's just text, it's fine. */}
+                    {typeof recipe.image === 'string' ? (
+                      <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      recipe.image
+                    )}
                   </div>
-                  <Link href={`/recipe/${recipe.slug}`}>
-                    <h3 className="text-xl font-semibold text-gray-900 hover:text-orange-600 mb-3">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                        {recipe.difficulty}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 group-hover:text-orange-600 transition-colors mb-3">
                       {recipe.title}
                     </h3>
-                  </Link>
-                  <div className="flex items-center text-sm text-gray-600 space-x-4">
-                    <span>⏱️ {recipe.cookTime}</span>
-                    <span>🍽️ {recipe.servings} servings</span>
+                    <div className="flex items-center text-sm text-gray-600 space-x-4">
+                      <span>⏱️ {recipe.cookTime}</span>
+                      <span>🍽️ {recipe.servings} servings</span>
+                    </div>
                   </div>
-                </div>
+                </Link>
               </article>
             ))}
           </div>

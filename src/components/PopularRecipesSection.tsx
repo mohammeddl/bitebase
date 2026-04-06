@@ -84,8 +84,9 @@ function RecipeCard({ recipe }: { recipe: typeof recipes[0] }) {
   };
 
   return (
-    <div
-      className="recipe-card relative rounded-3xl overflow-hidden cursor-pointer shrink-0"
+    <Link
+      href={`/recipe/${recipe.slug}`}
+      className="recipe-card relative block rounded-3xl overflow-hidden cursor-pointer shrink-0"
       style={{ height: '380px' }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -124,16 +125,14 @@ function RecipeCard({ recipe }: { recipe: typeof recipes[0] }) {
             </span>
           ))}
         </div>
-        <Link
-          href={`/recipe/${recipe.slug}`}
+        <div
           className="flex items-center justify-between w-full bg-gray-950 hover:bg-amber-500 text-white text-sm font-semibold px-5 py-3 rounded-full transition-colors"
-          onClick={(e) => e.stopPropagation()}
         >
           <span>See Complete Recipe</span>
           <span className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-base">🍳</span>
-        </Link>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
