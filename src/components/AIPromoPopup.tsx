@@ -65,10 +65,7 @@ export default function AIPromoPopup() {
           className="absolute inset-0 w-full h-full object-cover"
         />
         
-        {/* Magic icon */}
-        <div className="absolute bottom-4 left-4 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 flex items-center justify-center w-12 h-12 rounded-2xl bg-amber-500 text-white shadow-xl rotate-12">
-          <Wand2 size={24} className="animate-pulse" />
-        </div>
+       
       </div>
 
       {/* Right side: Content */}
