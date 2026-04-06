@@ -43,7 +43,7 @@ export function generateSEOMetadata(seo: SEOMetadata): Metadata {
 
 export const SITE_NAME = 'BiteBase';
 export const SITE_DESCRIPTION = 'BiteBase is your ultimate culinary companion, offering thousands of delicious recipes, expert cooking tips, and a magic AI chef to transform your ingredients into masterpieces.';
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://bitebase.com';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.bitebase.me';
 
 /**
  * Generate BreadcrumbList structured data
