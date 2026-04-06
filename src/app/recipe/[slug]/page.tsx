@@ -1,9 +1,10 @@
 import { Metadata } from 'next';
-import { generateSEOMetadata, generateRecipeJsonLd } from '@/lib/seo';
+import { generateSEOMetadata, generateRecipeJsonLd, SITE_NAME } from '@/lib/seo';
 import Link from 'next/link';
 import Image from 'next/image';
 import PageAnimations from '@/components/PageAnimations';
 import JsonLd from '@/components/JsonLd';
+import AdUnit from '@/components/AdUnit';
 import { getRecipeById, searchRecipes } from '@/lib/spoonacularAPI';
 
 interface Props {
@@ -122,7 +123,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const recipe = await getRecipe(slug);
   return generateSEOMetadata({
-    title: `${recipe.title} Recipe | BiteBase`,
+    title: `${recipe.title} Recipe | ${SITE_NAME}`,
     description: recipe.description,
     keywords: [recipe.title, recipe.category ?? 'recipe', 'recipe', 'cooking', slug].filter(Boolean),
   });
@@ -289,6 +290,9 @@ export default async function RecipePage({ params }: Props) {
                     className="object-cover"
                   />
                 </div>
+
+                {/* AdSense Ad Placement - Recipe Bottom */}
+                <AdUnit slot="recipe_main" className="mt-12" />
               </div>
 
               {/* Cooking Reviews */}
@@ -328,6 +332,9 @@ export default async function RecipePage({ params }: Props) {
 
             {/* ── Right Sidebar ── */}
             <div className="space-y-6">
+
+              {/* AdSense Ad Placement - Sidebar */}
+              <AdUnit slot="recipe_sidebar" />
 
               {/* Nutritional Info */}
               <div data-gsap="slide-right" className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">

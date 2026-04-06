@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { generateSEOMetadata, SITE_NAME, generateBreadcrumbJsonLd } from '@/lib/seo';
 import Link from 'next/link';
 import JsonLd from '@/components/JsonLd';
+import AdUnit from '@/components/AdUnit';
 
 interface Props {
   params: Promise<{
@@ -94,9 +95,7 @@ export default async function CategoryPage({ params }: Props) {
 
         {/* AdSense Ad Placement */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8">
-          <div className="bg-gray-200 rounded-lg p-4 text-center text-gray-600 h-24 flex items-center justify-center">
-            <span className="text-sm">Advertisement</span>
-          </div>
+          <AdUnit slot="cat_top" />
         </div>
       </section>
 
@@ -177,9 +176,7 @@ export default async function CategoryPage({ params }: Props) {
       {/* AdSense Ad Placement - Bottom */}
       <section className="py-12 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="bg-gray-200 rounded-lg p-4 text-center text-gray-600 h-24 flex items-center justify-center">
-            <span className="text-sm">Advertisement</span>
-          </div>
+          <AdUnit slot="cat_bottom" />
         </div>
       </section>
     </main>
