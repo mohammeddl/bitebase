@@ -1,5 +1,3 @@
-// Web Audio API utility for generating sounds
-
 export const createNotificationSound = () => {
   const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   const now = audioContext.currentTime;

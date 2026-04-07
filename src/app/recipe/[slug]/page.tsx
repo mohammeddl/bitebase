@@ -5,16 +5,93 @@ import Image from 'next/image';
 import PageAnimations from '@/components/PageAnimations';
 import JsonLd from '@/components/JsonLd';
 import AdUnit from '@/components/AdUnit';
-import { getRecipeById, searchRecipes } from '@/lib/spoonacularAPI';
+import { getRecipeById, getLocalRecipeById, searchRecipes } from '@/lib/spoonacularAPI';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
 async function getRecipe(slug: string) {
-  // Try to parse slug as recipe ID
+  // 1. Try Local Database First
+  try {
+    const localRecipe = await getLocalRecipeById(slug);
+    if (localRecipe) {
+      // 1.1 Normalize Nutrition (Handling both AI and Raw Spoonacular formats)
+      let nutritionMap: { [key: string]: string } = {
+        calories: 'N/A',
+        protein: 'N/A',
+        fat: 'N/A',
+        carbs: 'N/A',
+      };
+
+      if (localRecipe.nutrition) {
+        if (localRecipe.nutrition.nutrients && Array.isArray(localRecipe.nutrition.nutrients)) {
+          // It's the raw Spoonacular format from bulk import
+          localRecipe.nutrition.nutrients.forEach((n: any) => {
+            const name = n.name.toLowerCase();
+            if (name.includes('calor')) nutritionMap.calories = `${Math.round(n.amount)} ${n.unit}`;
+            else if (name.includes('protein')) nutritionMap.protein = `${n.amount.toFixed(1)} ${n.unit}`;
+            else if (name.includes('fat') && !name.includes('saturated')) nutritionMap.fat = `${n.amount.toFixed(1)} ${n.unit}`;
+            else if (name.includes('carbohydrate')) nutritionMap.carbs = `${n.amount.toFixed(1)} ${n.unit}`;
+          });
+        } else {
+          // It's the simple format from AI generator
+          nutritionMap = { ...nutritionMap, ...localRecipe.nutrition };
+        }
+      }
+
+      // 1.2 Normalize Instructions
+      let finalInstructions: string[] = [];
+      if (Array.isArray(localRecipe.instructions)) {
+        if (localRecipe.instructions[0]?.steps) {
+          // Raw Spoonacular format
+          finalInstructions = localRecipe.instructions[0].steps.map((s: any) => s.step);
+        } else {
+          // AI or Simple format
+          finalInstructions = localRecipe.instructions.map((step: any) => 
+            typeof step === 'string' ? step : step.step || ''
+          );
+        }
+      }
+
+      // 1.3 Normalize Ingredients
+      let finalIngredients: string[] = [];
+      if (Array.isArray(localRecipe.ingredients)) {
+        finalIngredients = localRecipe.ingredients.map((ing: any) => {
+          if (typeof ing === 'string') return ing;
+          if (ing.original) return ing.original;
+          return `${ing.amount || ''} ${ing.unit || ''} ${ing.name || ''}`.trim();
+        });
+      }
+
+      return {
+        id: localRecipe.id,
+        title: localRecipe.title,
+        slug: slug,
+        description: localRecipe.description || 'No description provided.',
+        img: localRecipe.image,
+        chefImg: '/images/home/chef-woman.jpg',
+        chefName: 'Community Chef',
+        cookTime: localRecipe.cook_time || 'N/A',
+        prepTime: localRecipe.prep_time || 'N/A',
+        servings: localRecipe.servings || 'N/A',
+        difficulty: localRecipe.difficulty || 'Medium',
+        cuisine: localRecipe.cuisine || 'International',
+        rating: 5.0,
+        reviews: 0,
+        tags: [localRecipe.cuisine, localRecipe.difficulty].filter(Boolean),
+        ingredients: finalIngredients,
+        instructions: finalInstructions,
+        instructionImg: localRecipe.image,
+        nutrition: nutritionMap,
+      };
+    }
+  } catch (error) {
+    console.error('Error fetching local recipe:', error);
+  }
+
+  // 2. Try Spoonacular API
   const recipeId = parseInt(slug, 10);
-  
   if (!isNaN(recipeId)) {
     try {
       const apiRecipe = await getRecipeById(recipeId);
@@ -205,6 +282,7 @@ export default async function RecipePage({ params }: Props) {
                 fill
                 className="object-cover object-center"
                 priority
+                unoptimized={recipe.img.includes('supabase.co')}
               />
               <div className="absolute inset-y-0 left-0 w-2/5 bg-linear-to-r from-[#F8F5F0] to-transparent" />
             </div>
@@ -256,7 +334,7 @@ export default async function RecipePage({ params }: Props) {
               <div data-gsap="fade-up" className="mb-10">
                 <h2 className="text-xl font-black text-gray-900 mb-4">Ingredients</h2>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                  {recipe.ingredients.map((ing, i) => (
+                  {recipe.ingredients.map((ing: string, i: number) => (
                     <div key={i} className="flex items-start gap-2">
                       <span className="text-amber-400 mt-0.5 text-xs">•</span>
                       <span className="text-sm text-gray-700">{ing}</span>
@@ -271,7 +349,7 @@ export default async function RecipePage({ params }: Props) {
                   Cooking <span className="text-amber-500">Instructions</span>
                 </h2>
                 <ol className="space-y-6">
-                  {recipe.instructions.map((step, i) => (
+                  {recipe.instructions.map((step: string, i: number) => (
                     <li key={i} className="flex gap-5 items-start border-b border-gray-50 pb-5">
                       <span className="text-2xl font-black text-amber-500 shrink-0 leading-none w-7">
                         {String(i + 1).padStart(2, '0')}
@@ -288,6 +366,7 @@ export default async function RecipePage({ params }: Props) {
                     alt="Recipe step"
                     fill
                     className="object-cover"
+                    unoptimized={recipe.instructionImg.includes('supabase.co')}
                   />
                 </div>
 

@@ -4,7 +4,12 @@ import Link from 'next/link';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { allRecipes, Recipe } from '@/lib/recipes';
-import { searchRecipesByCategory, searchRecipes, type SpoonacularRecipe } from '@/lib/spoonacularAPI';
+import { 
+  searchRecipesByCategory, 
+  searchRecipes, 
+  searchLocalRecipes, 
+  type SpoonacularRecipe 
+} from '@/lib/spoonacularAPI';
 import WatchlistButton from '@/components/WatchlistButton';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -43,7 +48,8 @@ function RecipeCard({ recipe }: { recipe: Recipe | SpoonacularRecipe }) {
             src={'img' in recipe ? recipe.img : recipe.image} 
             alt={recipe.title} 
             fill 
-            className="object-cover" 
+            className="object-cover"
+            unoptimized={('img' in recipe ? recipe.img : recipe.image).includes('supabase.co')}
           />
         </div>
 
@@ -60,6 +66,11 @@ function RecipeCard({ recipe }: { recipe: Recipe | SpoonacularRecipe }) {
           style={{ opacity: 0, transform: 'translateY(-20px)' }}
         >
           <h3 className="text-xl font-black text-white leading-tight group-hover:text-amber-400 transition-colors">{recipe.title}</h3>
+          {(recipe as any).isLocal && (
+            <span className="inline-block mt-2 px-3 py-1 bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
+              Community
+            </span>
+          )}
         </div>
 
         {/* Bottom: tags + button */}
@@ -119,36 +130,58 @@ export default function SearchRecipeGrid({
   const gridRef = useRef<HTMLDivElement>(null);
   const [recipes, setRecipes] = useState<(Recipe | SpoonacularRecipe)[]>([]);
   const [loading, setLoading] = useState(true);
-  const RECIPES_PER_PAGE = 12;
+  
+  // 70% DB (8) + 30% API (4) = 12 total
+  const DB_COUNT = 8;
+  const API_COUNT = 4;
+  const RECIPES_PER_PAGE = DB_COUNT + API_COUNT;
 
   useEffect(() => {
-    const fetchRecipes = async () => {
+    const fetchHybridRecipes = async () => {
       setLoading(true);
       try {
-        const offset = (currentPage - 1) * RECIPES_PER_PAGE;
-        let apiRecipes: SpoonacularRecipe[] = [];
+        const dbOffset = (currentPage - 1) * DB_COUNT;
+        const apiOffset = (currentPage - 1) * API_COUNT;
 
-        // If searchQuery exists, use search instead of category
-        if (searchQuery.trim()) {
-          apiRecipes = await searchRecipes(searchQuery, RECIPES_PER_PAGE, offset);
-        } else {
-          apiRecipes = await searchRecipesByCategory(category, RECIPES_PER_PAGE, offset);
-        }
+        // Fetch parallelly for speed
+        const [dbResults, apiResults] = await Promise.all([
+          searchLocalRecipes(searchQuery, category, DB_COUNT, dbOffset),
+          searchQuery.trim() 
+            ? searchRecipes(searchQuery, API_COUNT, apiOffset)
+            : searchRecipesByCategory(category, API_COUNT, apiOffset)
+        ]);
 
-        if (apiRecipes.length > 0) {
-          setRecipes(apiRecipes);
-        } else {
-          setRecipes(allRecipes.slice(offset, offset + RECIPES_PER_PAGE));
-        }
+        // Normalize DB recipes to match UI expectations if needed
+        const normalizedDB = dbResults.map((r: any) => ({
+          ...r,
+          id: r.id.toString(),
+          img: r.image,
+          tags: [r.cuisine, r.difficulty].filter(Boolean),
+          isLocal: true
+        }));
+
+        const normalizedAPI = apiResults.map((r: any) => ({
+          ...r,
+          isLocal: false
+        }));
+
+        // Combine: DB first (70%), then API (30%)
+        const combined = [...normalizedDB, ...normalizedAPI];
+        
+        // If we have total results less than expected, it might be the end
+        setRecipes(combined);
+        
       } catch (error) {
-        console.error('Failed to fetch recipes:', error);
-        setRecipes(allRecipes.slice((currentPage - 1) * RECIPES_PER_PAGE, currentPage * RECIPES_PER_PAGE));
+        console.error('Failed to fetch hybrid recipes:', error);
+        // Fallback to static data on error
+        const staticOffset = (currentPage - 1) * RECIPES_PER_PAGE;
+        setRecipes(allRecipes.slice(staticOffset, staticOffset + RECIPES_PER_PAGE));
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRecipes();
+    fetchHybridRecipes();
   }, [category, currentPage, searchQuery]);
 
   useEffect(() => {

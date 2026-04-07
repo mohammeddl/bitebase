@@ -9,6 +9,7 @@ export interface UserProfile {
   full_name: string;
   email: string;
   avatar_url: string | null;
+  role: 'user' | 'admin';
 }
 
 interface AuthState {
@@ -44,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               full_name: profile.full_name || '',
               email: profile.email || '',
               avatar_url: profile.avatar_url || null,
+              role: profile.role || 'user',
             });
           }
         }
@@ -67,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               full_name: profile.full_name || '',
               email: profile.email || '',
               avatar_url: profile.avatar_url || null,
+              role: profile.role || 'user',
             });
           }
         } catch (err) {
@@ -95,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             full_name: profile.full_name || '',
             email: profile.email || '',
             avatar_url: profile.avatar_url || null,
+            role: profile.role || 'user',
           });
         }
       }
@@ -116,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             full_name: profile.full_name || '',
             email: profile.email || '',
             avatar_url: profile.avatar_url || null,
+            role: profile.role || 'user',
           });
         }
       }

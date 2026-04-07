@@ -5,6 +5,7 @@ export type UserProfile = {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
+  role: 'user' | 'admin';
   created_at: string;
 };
 
@@ -114,6 +115,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
           email: user.email || '',
           full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
           avatar_url: user.user_metadata?.avatar_url || null,
+          role: 'user', // Default role
           created_at: new Date().toISOString(),
         };
 
@@ -126,7 +128,8 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
               id: userId,
               email: fallbackProfile.email,
               full_name: fallbackProfile.full_name,
-              avatar_url: fallbackProfile.avatar_url
+              avatar_url: fallbackProfile.avatar_url,
+              role: 'user'
             }])
             .select()
             .single();

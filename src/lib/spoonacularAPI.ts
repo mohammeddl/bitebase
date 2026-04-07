@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabaseClient } from './supabaseClient';
 
 // Types for Spoonacular API
 export interface SpoonacularRecipe {
@@ -15,6 +16,7 @@ export interface SpoonacularRecipeDetail extends SpoonacularRecipe {
   servings: number;
   sourceUrl: string;
   summary: string;
+  cuisines: string[];
   extendedIngredients: Array<{
     original: string;
     name: string;
@@ -191,5 +193,82 @@ export async function searchByDiet(
   } catch (error) {
     console.error(`Error searching by diet ${diet}:`, error);
     return [];
+  }
+}
+/**
+ * Search local database recipes
+ */
+export async function searchLocalRecipes(
+  query: string,
+  category: string,
+  number = 8,
+  offset = 0
+): Promise<any[]> {
+  try {
+    let supabaseQuery = supabaseClient
+      .from('recipes')
+      .select('*');
+
+    // Filter by search query if present
+    if (query.trim()) {
+      supabaseQuery = supabaseQuery.ilike('title', `%${query}%`);
+    }
+
+    // Filter by category if present
+    if (category !== 'all') {
+      // Map frontend categories to our DB's cuisine or title matching
+      const catMap: { [key: string]: string } = {
+        appetizer: 'Appetizer',
+        main: 'Main Course',
+        vegetarian: 'Vegetarian',
+        dessert: 'Dessert',
+        easy: 'Easy'
+      };
+      
+      const mappedCat = catMap[category];
+      if (mappedCat) {
+        // Search in cuisine OR title OR description for the category keyword
+        supabaseQuery = supabaseQuery.or(`cuisine.ilike.%${mappedCat}%,title.ilike.%${mappedCat}%,description.ilike.%${mappedCat}%`);
+      }
+    }
+
+    const { data, error } = await supabaseQuery
+      .range(offset, offset + number - 1)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error searching local recipes:', error);
+    return [];
+  }
+}
+
+/**
+ * Get local recipe by ID
+ */
+export async function getLocalRecipeById(id: string | number): Promise<any | null> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('recipes')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error || !data) {
+      // Also try external_id just in case
+      const { data: extData, error: extError } = await supabaseClient
+        .from('recipes')
+        .select('*')
+        .eq('external_id', Number(id))
+        .maybeSingle();
+        
+      if (extError || !extData) return null;
+      return extData;
+    }
+    return data;
+  } catch (error) {
+    console.error(`Error fetching local recipe ${id}:`, error);
+    return null;
   }
 }
