@@ -9,6 +9,24 @@ export type UserProfile = {
   created_at: string;
 };
 
+// Helper to get the correct site URL for redirects
+const getURL = () => {
+  let url =
+    process.env.NEXT_PUBLIC_SITE_URL ?? // Set this to https://bitebase.me in production
+    process.env.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel
+    'https://bitebase.me'; // Your official production domain
+  
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:3000';
+  }
+
+  // Make sure to include `https://` when not localhost
+  url = url.includes('http') ? url : `https://${url}`;
+  // Make sure to remove trailing slash
+  url = url.charAt(url.length - 1) === '/' ? url.slice(0, -1) : url;
+  return url;
+};
+
 // Sign up with email and password
 export async function signUpWithEmail(
   email: string,
@@ -19,7 +37,7 @@ export async function signUpWithEmail(
     email,
     password,
     options: {
-      emailRedirectTo: `${window.location.origin}/auth/callback`,
+      emailRedirectTo: `${getURL()}/auth/callback`,
       data: {
         full_name: fullName,
       },
@@ -46,7 +64,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabaseClient.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: `${getURL()}/auth/callback`,
     },
   });
 
@@ -63,7 +81,7 @@ export async function signOut() {
 // Request password reset email
 export async function resetPasswordForEmail(email: string) {
   const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/auth/update-password`,
+    redirectTo: `${getURL()}/auth/update-password`,
   });
   if (error) throw error;
   return data;
