@@ -4,7 +4,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { UtensilsCrossed, Heart, Trophy, BookOpen } from 'lucide-react';
 import PopularRecipesSection from '@/components/PopularRecipesSection';
-import PageAnimations from '@/components/PageAnimations';import FeaturedRecipeCard from '@/components/FeaturedRecipeCard';
+import PageAnimations from '@/components/PageAnimations';
+import FeaturedRecipeCard from '@/components/FeaturedRecipeCard';
+import NewsletterForm from '@/components/NewsletterForm';
 export const metadata: Metadata = generateSEOMetadata({
   title: `${SITE_NAME} - Discover Amazing Recipes`,
   description: SITE_DESCRIPTION,
@@ -271,15 +273,8 @@ export default function Home() {
               </h2>
               <p className="text-gray-400">Get the best recipes delivered to your inbox every week.</p>
             </div>
-            <div className="flex gap-3">
-              <input
-                type="email"
-                placeholder="Enter your email address..."
-                className="flex-1 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-              />
-              <button className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-6 py-3 rounded-full transition whitespace-nowrap">
-                Join Now
-              </button>
+            <div className="flex gap-3 w-full">
+              <NewsletterForm />
             </div>
           </div>
         </div>
