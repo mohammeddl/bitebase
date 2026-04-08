@@ -4,13 +4,13 @@ import { searchRecipesByCategory, getRecipeById } from '@/lib/spoonacularAPI';
 
 export async function POST(request: Request) {
   try {
-    const { count = 10, category = 'all' } = await request.json();
+    const { count = 10, category = 'all', offset = 0 } = await request.json();
     
-    console.log(`--- Starting Bulk Import: ${count} recipes from category "${category}" ---`);
+    console.log(`--- Starting Bulk Import: ${count} recipes (Offset: ${offset}) from category "${category}" ---`);
 
     // 1. Fetch search results from Spoonacular
     // Note: Spoonacular's complexSearch returns basic info. We need full info for each.
-    const searchResults = await searchRecipesByCategory(category, count);
+    const searchResults = await searchRecipesByCategory(category, count, offset);
     
     if (!searchResults || searchResults.length === 0) {
       return NextResponse.json({ success: true, imported: 0, skipped: 0, message: 'No recipes found for this category.' });

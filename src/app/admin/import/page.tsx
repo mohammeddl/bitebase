@@ -34,6 +34,7 @@ export default function AdminImportPage() {
   
   const [isImporting, setIsImporting] = useState(false);
   const [count, setCount] = useState(10);
+  const [offset, setOffset] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [results, setResults] = useState<{
     imported: number;
@@ -78,6 +79,7 @@ export default function AdminImportPage() {
         body: JSON.stringify({
           count,
           category: selectedCategory,
+          offset,
         }),
       });
 
@@ -91,6 +93,9 @@ export default function AdminImportPage() {
           details: data.details,
         });
         
+        // Auto-increment offset for the next batch
+        setOffset(prev => prev + count);
+
         Swal.fire({
           title: 'Import Complete!',
           text: `Success: ${data.imported} | Skipped: ${data.skipped} | Errors: ${data.errors}`,
@@ -179,6 +184,23 @@ export default function AdminImportPage() {
                     <span className="w-12 h-10 bg-gray-800 rounded-xl flex items-center justify-center font-bold text-amber-500 border border-gray-700">
                       {count}
                     </span>
+                  </div>
+                </div>
+                
+                {/* Offset Selector */}
+                <div>
+                  <label className="text-sm text-gray-400 mb-3 block font-medium">Starting Offset (Pagination)</label>
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="number" 
+                      min="0" 
+                      value={offset}
+                      onChange={(e) => setOffset(parseInt(e.target.value) || 0)}
+                      className="w-full bg-gray-800 rounded-xl px-4 py-3 font-bold text-amber-500 border border-gray-700 focus:border-amber-500 focus:outline-none transition-all"
+                    />
+                    <div className="text-[10px] text-gray-500 uppercase font-bold w-24">
+                      Current Range: <br/> {offset} - {offset + count}
+                    </div>
                   </div>
                 </div>
 
