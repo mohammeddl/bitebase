@@ -48,6 +48,9 @@ const apiClient = axios.create({
   },
 });
 
+// API Circuit Breaker state
+let isApiExhausted = false;
+
 /**
  * Search recipes by query string
  */
@@ -56,6 +59,11 @@ export async function searchRecipes(
   number = 12,
   offset = 0
 ): Promise<SpoonacularRecipe[]> {
+  if (isApiExhausted) {
+    console.log('Spoonacular API in circuit-breaker mode (402), bypassing request.');
+    return [];
+  }
+
   try {
     const response = await apiClient.get('/complexSearch', {
       params: {
@@ -68,8 +76,13 @@ export async function searchRecipes(
     });
 
     return response.data.results || [];
-  } catch (error) {
-    console.error('Error searching recipes:', error);
+  } catch (error: any) {
+    if (error.response?.status === 402) {
+      console.error('Spoonacular API Quote Exceeded (402). Engaging circuit breaker.');
+      isApiExhausted = true;
+    } else {
+      console.error('Error searching recipes:', error);
+    }
     return [];
   }
 }
@@ -82,6 +95,10 @@ export async function searchRecipesByCategory(
   number = 12,
   offset = 0
 ): Promise<SpoonacularRecipe[]> {
+  if (isApiExhausted) {
+    return [];
+  }
+
   try {
     // Map category to search queries
     const categoryQueries: { [key: string]: string } = {
@@ -106,8 +123,13 @@ export async function searchRecipesByCategory(
     });
 
     return response.data.results || [];
-  } catch (error) {
-    console.error(`Error searching recipes by category ${category}:`, error);
+  } catch (error: any) {
+    if (error.response?.status === 402) {
+      console.error('Spoonacular API Quote Exceeded (402). Engaging circuit breaker.');
+      isApiExhausted = true;
+    } else {
+      console.error(`Error searching recipes by category ${category}:`, error);
+    }
     return [];
   }
 }

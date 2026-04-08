@@ -140,6 +140,12 @@ export default function SearchRecipeGrid({
     const fetchHybridRecipes = async () => {
       console.log('--- Hybrid Fetch Start ---');
       setLoading(true);
+      
+      // Safety timeout to prevent indefinite "Loading..."
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Fetch timeout hit')), 6000); // 6 seconds
+      });
+
       try {
         const dbOffset = (currentPage - 1) * DB_COUNT;
         const apiOffset = (currentPage - 1) * API_COUNT;
@@ -147,21 +153,23 @@ export default function SearchRecipeGrid({
         console.log(`Fetching DB: count=${DB_COUNT}, offset=${dbOffset}, category=${category}`);
         console.log(`Fetching API: count=${API_COUNT}, offset=${apiOffset}, query=${searchQuery}`);
 
-        // Fetch parallelly for speed, but catch API errors individually
-        const [dbResults, apiResults] = await Promise.all([
-          searchLocalRecipes(searchQuery, category, DB_COUNT, dbOffset).catch(err => {
-            console.error('DB fetch failure:', err);
-            return [];
-          }),
-          // Only fetch from API if not failing persistently
-          (searchQuery.trim() 
-            ? searchRecipes(searchQuery, API_COUNT, apiOffset)
-            : searchRecipesByCategory(category, API_COUNT, apiOffset)
-          ).catch(err => {
-            console.warn('Spoonacular API failure (falling back to DB):', err);
-            return []; // Return empty on API failure to trigger DB fill
-          })
-        ]);
+        // Race our data fetching against the safety timeout
+        const [dbResults, apiResults] = await Promise.race([
+          Promise.all([
+            searchLocalRecipes(searchQuery, category, DB_COUNT, dbOffset).catch(err => {
+              console.error('DB fetch failure:', err);
+              return [];
+            }),
+            (searchQuery.trim() 
+              ? searchRecipes(searchQuery, API_COUNT, apiOffset)
+              : searchRecipesByCategory(category, API_COUNT, apiOffset)
+            ).catch(err => {
+              console.warn('Spoonacular API failure (falling back to DB):', err);
+              return [];
+            })
+          ]),
+          timeoutPromise
+        ]) as any[];
 
         console.log(`Results Rx - DB: ${dbResults?.length || 0}, API: ${apiResults?.length || 0}`);
 
@@ -191,7 +199,7 @@ export default function SearchRecipeGrid({
             searchQuery, 
             category, 
             missingCount, 
-            dbOffset + DB_COUNT // Start after the first batch
+            dbOffset + DB_COUNT
           ).catch(() => []);
 
           if (additionalDbResults.length > 0) {
@@ -211,9 +219,21 @@ export default function SearchRecipeGrid({
         
       } catch (error) {
         console.error('Critical failure in hybrid fetch:', error);
-        // Final fallback to static data
-        const staticOffset = (currentPage - 1) * RECIPES_PER_PAGE;
-        setRecipes(allRecipes.slice(staticOffset, staticOffset + RECIPES_PER_PAGE));
+        // On failure/timeout, fill with whatever local recipes we have
+        const localOnly = await searchLocalRecipes(searchQuery, category, RECIPES_PER_PAGE, (currentPage - 1) * RECIPES_PER_PAGE).catch(() => []);
+        if (localOnly.length > 0) {
+           const normalized = localOnly.map((r: any) => ({
+            ...r,
+            id: r.id.toString(),
+            img: r.image,
+            tags: [r.cuisine, r.difficulty].filter(Boolean),
+            isLocal: true
+          }));
+          setRecipes(normalized);
+        } else {
+          const staticOffset = (currentPage - 1) * RECIPES_PER_PAGE;
+          setRecipes(allRecipes.slice(staticOffset, staticOffset + RECIPES_PER_PAGE));
+        }
       } finally {
         console.log('--- Hybrid Fetch End ---');
         setLoading(false);
