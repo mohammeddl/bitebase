@@ -33,6 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sync with Supabase auth state on mount
   useEffect(() => {
     const initAuth = async () => {
+      // Safety timeout: Ensure loading always clears after 5 seconds
+      const timeout = setTimeout(() => {
+        setIsLoading(false);
+      }, 5000);
+
       try {
         setIsLoading(true);
         const { data: { session } } = await supabaseClient.auth.getSession();
@@ -52,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error('Failed to load auth state:', err);
       } finally {
+        clearTimeout(timeout);
         setIsLoading(false);
       }
     };

@@ -1,0 +1,23 @@
+name: Automated Recipe Generation
+
+on:
+  schedule:
+    # Runs at 00:00 UTC every day
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate 20 Recipes
+        run: |
+          # We loop 20 times and call the "Generate 1" API
+          # This avoids the 10-second Vercel timeout because each request is independent.
+          for i in {1..20}
+          do
+            echo "Generating recipe $i..."
+            curl -s "https://bitebase.me/api/cron/generate?secret=${{ secrets.CRON_SECRET }}&count=1"
+            # Small sleep to be nice to the API
+            sleep 2
+          done

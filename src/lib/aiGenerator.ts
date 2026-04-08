@@ -21,7 +21,8 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
     throw new Error('Supabase Admin client not initialized');
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+  const startTime = Date.now();
+  const VERCEL_TIMEOUT = 9500; // 9.5 seconds to be safe (Hobby tier is 10s)
 
   const results: GenerationResult = {
     created: 0,
@@ -29,10 +30,21 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
     details: []
   };
 
-  console.log(`--- AI Recipe Generation Started: ${count} recipes with theme "${theme}" ---`);
+  console.log(`--- AI Multi-Generation Started: ${count} recipes (Theme: "${theme}") ---`);
 
-  for (let i = 0; i < count; i++) {
+  // To fit in 10s on Vercel Hobby, we MUST run them in parallel
+  // However, Gemini/Pollinations might rate-limit if we do 20 at once.
+  // We'll process in small parallel chunks or just all at once if count is small.
+  const generateOne = async (index: number) => {
+    // Check if we are running out of time
+    if (Date.now() - startTime > VERCEL_TIMEOUT) {
+      console.log(`Skipping recipe ${index + 1} due to timeout risk`);
+      return;
+    }
+
     try {
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      
       // 1. Generate full recipe data using Gemini
       const prompt = `
         You are a Michelin-star chef. Create a unique, delicious, and professional recipe.
@@ -85,7 +97,7 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
         const imageBuffer = await imageResponse.arrayBuffer();
         const fileName = `ai/${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`;
 
-        const { error: storageError } = await supabaseAdmin
+        const { error: storageError } = await supabaseAdmin!
           .storage
           .from('recipe-images')
           .upload(fileName, imageBuffer, {
@@ -94,7 +106,7 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
           });
 
         if (!storageError) {
-          const { data: publicUrlData } = supabaseAdmin
+          const { data: publicUrlData } = supabaseAdmin!
             .storage
             .from('recipe-images')
             .getPublicUrl(fileName);
@@ -105,7 +117,7 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
       }
 
       // 3. Save to Database
-      const { data: inserted, error: dbError } = await supabaseAdmin
+      const { data: inserted, error: dbError } = await supabaseAdmin!
         .from('recipes')
         .insert([{
           title: recipeData.title,
@@ -125,18 +137,20 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
         .single();
 
       if (dbError) {
-        console.error('DB Insert Error:', dbError);
         results.errors++;
       } else {
         results.created++;
         results.details.push(`Created: ${recipeData.title}`);
       }
-
-    } catch (innerErr) {
-      console.error('Inner Loop Error:', innerErr);
+    } catch (err) {
+      console.error(`Error in recipe gen ${index}:`, err);
       results.errors++;
     }
-  }
+  };
+
+  // Trigger all in parallel
+  const tasks = Array.from({ length: count }, (_, i) => generateOne(i));
+  await Promise.all(tasks);
 
   return results;
 }
