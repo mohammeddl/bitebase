@@ -226,13 +226,20 @@ export async function searchLocalRecipes(
   number = 8,
   offset = 0
 ): Promise<any[]> {
+  console.log('--- DB Search Ping ---');
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) {
+    console.error('FATAL: NEXT_PUBLIC_SUPABASE_URL is missing!');
+    return [];
+  }
+
   try {
     let supabaseQuery = supabaseClient
       .from('recipes')
       .select('*');
 
     // Filter by search query if present
-    if (query.trim()) {
+    if (query?.trim()) {
       supabaseQuery = supabaseQuery.ilike('title', `%${query}%`);
     }
 
@@ -251,19 +258,23 @@ export async function searchLocalRecipes(
       
       const mappedCat = catMap[category.toLowerCase()];
       if (mappedCat) {
-        // Search in cuisine or description primarily
         supabaseQuery = supabaseQuery.or(`cuisine.ilike.%${mappedCat}%,description.ilike.%${mappedCat}%`);
       }
     }
 
-    const { data, error } = await supabaseQuery
+    const { data, error, count } = await supabaseQuery
       .order('created_at', { ascending: false })
       .range(offset, offset + number - 1);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase Query Error:', error.message, error.details);
+      throw error;
+    }
+
+    console.log(`DB Search Success: Found ${data?.length || 0} recipes`);
     return data || [];
-  } catch (error) {
-    console.error('Error searching local recipes:', error);
+  } catch (error: any) {
+    console.error('Error searching local recipes:', error.message || error);
     return [];
   }
 }

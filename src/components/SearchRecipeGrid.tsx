@@ -136,11 +136,22 @@ export default function SearchRecipeGrid({
   const API_COUNT = 4;
   const RECIPES_PER_PAGE = DB_COUNT + API_COUNT;
 
+  // Final fallback state
+  const [dbError, setDbError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchHybridRecipes = async () => {
       console.log('--- Hybrid Fetch Start ---');
       setLoading(true);
+      setDbError(null);
       
+      // Check if URL is present (simplest connection test)
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        setDbError('DATABASE CONFIG MISSING: NEXT_PUBLIC_SUPABASE_URL is not set.');
+        setLoading(false);
+        return;
+      }
+
       // Safety timeout reduced to 3 seconds for better UX
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Fetch timeout hit')), 3000); // 3 seconds
@@ -267,14 +278,25 @@ export default function SearchRecipeGrid({
 
   return (
     <div ref={gridRef}>
-      {loading && recipes.length === 0 && (
+      {dbError && (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="text-6xl mb-6">⚠️</div>
+          <h3 className="text-2xl font-black text-red-600 mb-2">Configuration Error</h3>
+          <p className="text-gray-500 max-w-md mx-auto">{dbError}</p>
+          <div className="mt-8 p-4 bg-gray-50 rounded-xl text-left text-xs font-mono text-gray-400 border border-gray-100 italic">
+            Tip: Ensure NEXT_PUBLIC_SUPABASE_URL is set in your Vercel project settings.
+          </div>
+        </div>
+      )}
+
+      {loading && !dbError && recipes.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24">
           <div className="w-16 h-16 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-4"></div>
           <div className="text-gray-400 font-medium animate-pulse">Finding the best recipes for you...</div>
         </div>
       )}
       
-      {!loading && recipes.length === 0 && (
+      {!loading && !dbError && recipes.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="text-6xl mb-6">🍳</div>
           <h3 className="text-2xl font-black text-gray-900 mb-2">No recipes found</h3>
