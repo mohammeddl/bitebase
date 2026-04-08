@@ -145,22 +145,25 @@ export default function SearchRecipeGrid({
       setLoading(true);
       setDbError(null);
       
+      const supUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+      console.log(`DB Health Check: URL=${supUrl.substring(0, 12)}...${supUrl.substring(supUrl.length - 5)}`);
+
       // Check if URL is present (simplest connection test)
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-        setDbError('DATABASE CONFIG MISSING: NEXT_PUBLIC_SUPABASE_URL is not set.');
+      if (!supUrl) {
+        setDbError('DATABASE CONFIG MISSING: NEXT_PUBLIC_SUPABASE_URL is not set in Vercel.');
         setLoading(false);
         return;
       }
 
-      // Safety timeout reduced to 3 seconds for better UX
+      // Safety timeout increased to 10 seconds for production resilience
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Fetch timeout hit')), 3000); // 3 seconds
+        setTimeout(() => reject(new Error('Fetch timeout hit')), 10000); 
       });
 
-      // Independent force-clear for the loading state
+      // Independent force-clear for the loading state (safety valve)
       const forceClearTimer = setTimeout(() => {
         setLoading(false);
-      }, 3500);
+      }, 11000);
 
       try {
         const dbOffset = (currentPage - 1) * DB_COUNT;
@@ -171,13 +174,13 @@ export default function SearchRecipeGrid({
           Promise.all([
             searchLocalRecipes(searchQuery, category, DB_COUNT, dbOffset).catch(err => {
               console.error('DB fetch failure:', err);
-              return [];
+              throw err; // Let it hit the catch block for diagnostics
             }),
             (searchQuery.trim() 
               ? searchRecipes(searchQuery, API_COUNT, apiOffset)
               : searchRecipesByCategory(category, API_COUNT, apiOffset)
             ).catch(err => {
-              console.warn('Spoonacular API failure (falling back to DB):', err);
+              console.warn('Spoonacular API failure (bypassing):', err);
               return [];
             })
           ]),
@@ -234,12 +237,19 @@ export default function SearchRecipeGrid({
         console.error('Critical failure in hybrid fetch:', error);
         const errorMsg = error.message || error.toString();
         
-        // Show the error on screen if it's a database connection/policy issue
-        if (errorMsg.toLowerCase().includes('database') || errorMsg.toLowerCase().includes('fetch') || errorMsg.toLowerCase().includes('policy')) {
-          setDbError(`DB ERROR: ${errorMsg}`);
+        // ONLY show the high-level error screen if it's a real config or block issue
+        // NOT for simple timeouts (which just need more time or a retry)
+        const isFatal = errorMsg.toLowerCase().includes('database') || 
+                        errorMsg.toLowerCase().includes('policy') || 
+                        errorMsg.toLowerCase().includes('missing');
+
+        if (isFatal) {
+          setDbError(`DB ACCESS ERROR: ${errorMsg}`);
+        } else {
+          console.warn('Non-fatal fetch issue (timeout/latency). Retrying with local data...');
         }
 
-        // On failure/timeout, fill with whatever local recipes we have immediately (last try)
+        // Recovery: fill with whatever local recipes we have immediately
         try {
           const localOnly = await searchLocalRecipes(searchQuery, category, RECIPES_PER_PAGE, (currentPage - 1) * RECIPES_PER_PAGE);
           if (localOnly && localOnly.length > 0) {
@@ -256,7 +266,6 @@ export default function SearchRecipeGrid({
             setRecipes(allRecipes.slice(staticOffset, staticOffset + RECIPES_PER_PAGE));
           }
         } catch (innerErr) {
-          // Even the last try failed, show static data
           if (recipes.length === 0) {
             const staticOffset = (currentPage - 1) * RECIPES_PER_PAGE;
             setRecipes(allRecipes.slice(staticOffset, staticOffset + RECIPES_PER_PAGE));

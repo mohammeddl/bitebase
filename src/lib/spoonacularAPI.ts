@@ -49,7 +49,10 @@ const apiClient = axios.create({
 });
 
 // API Circuit Breaker state
-let isApiExhausted = false;
+// Initialize from localStorage if on the client
+let isApiExhausted = typeof window !== 'undefined' 
+  ? localStorage.getItem('spoonacular_exhausted') === 'true'
+  : false;
 
 /**
  * Search recipes by query string
@@ -60,7 +63,7 @@ export async function searchRecipes(
   offset = 0
 ): Promise<SpoonacularRecipe[]> {
   if (isApiExhausted) {
-    console.log('Spoonacular API in circuit-breaker mode (402), bypassing request.');
+    console.log('Spoonacular API in persistent circuit-breaker mode (402), bypassing request.');
     return [];
   }
 
@@ -78,8 +81,11 @@ export async function searchRecipes(
     return response.data.results || [];
   } catch (error: any) {
     if (error.response?.status === 402) {
-      console.error('Spoonacular API Quote Exceeded (402). Engaging circuit breaker.');
+      console.error('Spoonacular API Quote Exceeded (402). Engaging persistent circuit breaker.');
       isApiExhausted = true;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('spoonacular_exhausted', 'true');
+      }
     } else {
       console.error('Error searching recipes:', error);
     }
@@ -125,8 +131,11 @@ export async function searchRecipesByCategory(
     return response.data.results || [];
   } catch (error: any) {
     if (error.response?.status === 402) {
-      console.error('Spoonacular API Quote Exceeded (402). Engaging circuit breaker.');
+      console.error('Spoonacular API Quote Exceeded (402). Engaging persistent circuit breaker.');
       isApiExhausted = true;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('spoonacular_exhausted', 'true');
+      }
     } else {
       console.error(`Error searching recipes by category ${category}:`, error);
     }
