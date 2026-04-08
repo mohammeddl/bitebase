@@ -21,6 +21,6 @@ jobs:
             # Added trailing slash before query params
             RESPONSE=$(curl -s -L "https://bitebase.me/api/cron/generate/?secret=${{ secrets.CRON_SECRET }}&count=1")
             echo "Response: $RESPONSE"
-            # Small sleep to be nice to the API
-            sleep 2
+            # Increased sleep for Gemini Free Tier (stay under 15 RPM)
+            sleep 10
           done

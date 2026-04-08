@@ -43,12 +43,15 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       
       // 1. Generate full recipe data using Gemini
+      // Added a random seed to prevent duplicates and variety
+      const randomSeed = Math.floor(Math.random() * 1000000);
       const prompt = `
         You are a Michelin-star chef. Create a unique, delicious, and professional recipe.
         Theme: ${theme === 'any' ? 'Surprise me with something creative' : theme}
+        Random Seed: ${randomSeed}
         
         Respond ONLY with a valid JSON object in this exact format:
         {
@@ -74,18 +77,22 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
         }
       `;
 
-      const chatResult = await model.generateContent(prompt);
-      const text = chatResult.response.text();
-      
-      let jsonStr = text;
-      if (text.includes("```")) {
-        const match = text.match(/```(?:json)?([\s\S]*?)```/);
-        if (match && match[1]) {
-          jsonStr = match[1].trim();
+      let recipeData;
+      try {
+        const chatResult = await model.generateContent(prompt);
+        const text = chatResult.response.text();
+        
+        let jsonStr = text.trim();
+        if (text.includes("```")) {
+          const match = text.match(/```(?:json)?([\s\S]*?)```/);
+          if (match && match[1]) {
+            jsonStr = match[1].trim();
+          }
         }
+        recipeData = JSON.parse(jsonStr);
+      } catch (geminiErr: any) {
+        throw new Error(`Gemini Stage Failed: ${geminiErr.message}`);
       }
-
-      const recipeData = JSON.parse(jsonStr);
 
       // 2. Generate Image with Pollinations AI
       const imagePrompt = encodeURIComponent(`${recipeData.title}, professional food photography, cinematic lighting, top down view, high resolution, 4k`);
@@ -94,6 +101,8 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
       let finalImageUrl = imageUrl;
       try {
         const imageResponse = await fetch(imageUrl);
+        if (!imageResponse.ok) throw new Error(`Image API returned ${imageResponse.status}`);
+        
         const imageBuffer = await imageResponse.arrayBuffer();
         const fileName = `ai/${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`;
 
@@ -105,15 +114,16 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
             upsert: true
           });
 
-        if (!storageError) {
-          const { data: publicUrlData } = supabaseAdmin!
-            .storage
-            .from('recipe-images')
-            .getPublicUrl(fileName);
-          finalImageUrl = publicUrlData.publicUrl;
-        }
-      } catch (imgErr) {
-        console.error('Image processing error:', imgErr);
+        if (storageError) throw storageError;
+
+        const { data: publicUrlData } = supabaseAdmin!
+          .storage
+          .from('recipe-images')
+          .getPublicUrl(fileName);
+        finalImageUrl = publicUrlData.publicUrl;
+      } catch (imgErr: any) {
+        // We log image errors but don't fail the whole recipe (fallback to hotlinked image)
+        console.warn(`Image processing warning for ${recipeData.title}:`, imgErr.message);
       }
 
       // 3. Save to Database
@@ -137,14 +147,16 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
         .single();
 
       if (dbError) {
-        results.errors++;
+        throw new Error(`Supabase DB Error: ${dbError.message}`);
       } else {
         results.created++;
         results.details.push(`Created: ${recipeData.title}`);
       }
-    } catch (err) {
-      console.error(`Error in recipe gen ${index}:`, err);
+    } catch (err: any) {
+      const errMsg = err.message || 'Unknown error';
+      console.error(`Error in recipe gen ${index}:`, errMsg);
       results.errors++;
+      results.details.push(`Error in recipe ${index + 1}: ${errMsg}`);
     }
   };
 
