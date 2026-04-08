@@ -12,9 +12,10 @@ jobs:
     steps:
       - name: Generate 20 Recipes
         run: |
-          # We loop 20 times and call the "Generate 1" API
+          # We loop 5 times and call the "Generate 1" API
           # This avoids the 10-second Vercel timeout because each request is independent.
-          for i in {1..20}
+          # REDUCED TO 5: This saves your strict 20 Request-Per-Day limit so site visitors can still use the AI Chef!
+          for i in {1..5}
           do
             echo "Generating recipe $i..."
             # Added -L to follow redirects (like www to non-www or trailing slash)
@@ -22,5 +23,5 @@ jobs:
             RESPONSE=$(curl -s -L "https://bitebase.me/api/cron/generate/?secret=${{ secrets.CRON_SECRET }}&count=1")
             echo "Response: $RESPONSE"
             # Increased sleep for Gemini Free Tier (stay under 15 RPM)
-            sleep 10
+            sleep 12
           done

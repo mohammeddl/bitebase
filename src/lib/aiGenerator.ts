@@ -43,43 +43,60 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const fallbackModels = ["gemini-1.5-flash", "gemini-pro", "gemini-1.5-flash-8b"];
+      let chatResult;
       
-      // 1. Generate full recipe data using Gemini
-      // Added a random seed to prevent duplicates and variety
-      const randomSeed = Math.floor(Math.random() * 1000000);
-      const prompt = `
-        You are a Michelin-star chef. Create a unique, delicious, and professional recipe.
-        Theme: ${theme === 'any' ? 'Surprise me with something creative' : theme}
-        Random Seed: ${randomSeed}
-        
-        Respond ONLY with a valid JSON object in this exact format:
-        {
-          "title": "Recipe Name",
-          "description": "Short appetizing description",
-          "cook_time": "X mins",
-          "prep_time": "X mins",
-          "servings": "X",
-          "difficulty": "Easy/Medium/Hard",
-          "cuisine": "Cuisine type",
-          "ingredients": [
-            {"name": "ingredient name", "amount": "amount", "unit": "unit", "original": "full original line"}
-          ],
-          "instructions": [
-            {"number": 1, "step": "step description"}
-          ],
-          "nutrition": {
-            "calories": "X kcal",
-            "protein": "Xg",
-            "carbs": "Xg",
-            "fat": "Xg"
+      // Try models in sequence if they fail
+      for (const modelName of fallbackModels) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName });
+          
+          // 1. Generate full recipe data using Gemini
+          // Added a random seed to prevent duplicates and variety
+          const randomSeed = Math.floor(Math.random() * 1000000);
+          const prompt = `
+            You are a Michelin-star chef. Create a unique, delicious, and professional recipe.
+            Theme: ${theme === 'any' ? 'Surprise me with something creative' : theme}
+            Random Seed: ${randomSeed}
+            
+            Respond ONLY with a valid JSON object in this exact format:
+            {
+              "title": "Recipe Name",
+              "description": "Short appetizing description",
+              "cook_time": "X mins",
+              "prep_time": "X mins",
+              "servings": "X",
+              "difficulty": "Easy/Medium/Hard",
+              "cuisine": "Cuisine type",
+              "ingredients": [
+                {"name": "ingredient name", "amount": "amount", "unit": "unit", "original": "full original line"}
+              ],
+              "instructions": [
+                {"number": 1, "step": "step description"}
+              ],
+              "nutrition": {
+                "calories": "X kcal",
+                "protein": "Xg",
+                "carbs": "Xg",
+                "fat": "Xg"
+              }
+            }
+          `;
+          
+          chatResult = await model.generateContent(prompt);
+          break; // Break loop if successful
+        } catch (e: any) {
+          console.warn(`Model ${modelName} failed:`, e.message);
+          if (modelName === fallbackModels[fallbackModels.length - 1]) {
+             throw new Error(`All models failed. Last error: ${e.message}`);
           }
         }
-      `;
+      }
 
       let recipeData;
       try {
-        const chatResult = await model.generateContent(prompt);
+        // chatResult is guaranteed to exist if we didn't throw in the loop above
+        if (!chatResult) throw new Error("Generation failed without throwing");
         const text = chatResult.response.text();
         
         let jsonStr = text.trim();
