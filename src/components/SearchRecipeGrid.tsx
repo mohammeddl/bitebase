@@ -143,16 +143,24 @@ export default function SearchRecipeGrid({
         const dbOffset = (currentPage - 1) * DB_COUNT;
         const apiOffset = (currentPage - 1) * API_COUNT;
 
-        // Fetch parallelly for speed
+        // Fetch parallelly for speed, but catch API errors individually
         const [dbResults, apiResults] = await Promise.all([
-          searchLocalRecipes(searchQuery, category, DB_COUNT, dbOffset),
-          searchQuery.trim() 
+          searchLocalRecipes(searchQuery, category, DB_COUNT, dbOffset).catch(err => {
+            console.error('DB fetch failure:', err);
+            return [];
+          }),
+          // Only fetch from API if not failing persistently
+          (searchQuery.trim() 
             ? searchRecipes(searchQuery, API_COUNT, apiOffset)
             : searchRecipesByCategory(category, API_COUNT, apiOffset)
+          ).catch(err => {
+            console.warn('Spoonacular API failure (falling back to DB):', err);
+            return []; // Return empty on API failure to trigger DB fill
+          })
         ]);
 
-        // Normalize DB recipes to match UI expectations if needed
-        const normalizedDB = dbResults.map((r: any) => ({
+        // Normalize DB recipes
+        const normalizedDB = (dbResults || []).map((r: any) => ({
           ...r,
           id: r.id.toString(),
           img: r.image,
@@ -160,20 +168,43 @@ export default function SearchRecipeGrid({
           isLocal: true
         }));
 
-        const normalizedAPI = apiResults.map((r: any) => ({
+        // Normalize API recipes
+        const normalizedAPI = (apiResults || []).map((r: any) => ({
           ...r,
           isLocal: false
         }));
 
         // Combine: DB first (70%), then API (30%)
-        const combined = [...normalizedDB, ...normalizedAPI];
+        let combined = [...normalizedDB, ...normalizedAPI];
         
-        // If we have total results less than expected, it might be the end
+        // --- RESILIENCE LOGIC: If API failed or is empty, fill with more from DB ---
+        if (combined.length < RECIPES_PER_PAGE && dbResults.length > 0) {
+          console.log(`Grid under-filled (${combined.length}/${RECIPES_PER_PAGE}). Fetching more from DB...`);
+          const missingCount = RECIPES_PER_PAGE - combined.length;
+          const additionalDbResults = await searchLocalRecipes(
+            searchQuery, 
+            category, 
+            missingCount, 
+            dbOffset + DB_COUNT // Start after the first batch
+          ).catch(() => []);
+
+          if (additionalDbResults.length > 0) {
+            const normalizedExtra = additionalDbResults.map((r: any) => ({
+              ...r,
+              id: r.id.toString(),
+              img: r.image,
+              tags: [r.cuisine, r.difficulty].filter(Boolean),
+              isLocal: true
+            }));
+            combined = [...combined, ...normalizedExtra];
+          }
+        }
+        
         setRecipes(combined);
         
       } catch (error) {
-        console.error('Failed to fetch hybrid recipes:', error);
-        // Fallback to static data on error
+        console.error('Critical failure in hybrid fetch:', error);
+        // Final fallback to static data
         const staticOffset = (currentPage - 1) * RECIPES_PER_PAGE;
         setRecipes(allRecipes.slice(staticOffset, staticOffset + RECIPES_PER_PAGE));
       } finally {
