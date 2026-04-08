@@ -141,17 +141,19 @@ export default function SearchRecipeGrid({
       console.log('--- Hybrid Fetch Start ---');
       setLoading(true);
       
-      // Safety timeout to prevent indefinite "Loading..."
+      // Safety timeout reduced to 3 seconds for better UX
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Fetch timeout hit')), 6000); // 6 seconds
+        setTimeout(() => reject(new Error('Fetch timeout hit')), 3000); // 3 seconds
       });
+
+      // Independent force-clear for the loading state
+      const forceClearTimer = setTimeout(() => {
+        setLoading(false);
+      }, 3500);
 
       try {
         const dbOffset = (currentPage - 1) * DB_COUNT;
         const apiOffset = (currentPage - 1) * API_COUNT;
-
-        console.log(`Fetching DB: count=${DB_COUNT}, offset=${dbOffset}, category=${category}`);
-        console.log(`Fetching API: count=${API_COUNT}, offset=${apiOffset}, query=${searchQuery}`);
 
         // Race our data fetching against the safety timeout
         const [dbResults, apiResults] = await Promise.race([
@@ -169,7 +171,7 @@ export default function SearchRecipeGrid({
             })
           ]),
           timeoutPromise
-        ]) as any[];
+        ]) as any[][];
 
         console.log(`Results Rx - DB: ${dbResults?.length || 0}, API: ${apiResults?.length || 0}`);
 
@@ -219,9 +221,9 @@ export default function SearchRecipeGrid({
         
       } catch (error) {
         console.error('Critical failure in hybrid fetch:', error);
-        // On failure/timeout, fill with whatever local recipes we have
+        // On failure/timeout, fill with whatever local recipes we have immediately
         const localOnly = await searchLocalRecipes(searchQuery, category, RECIPES_PER_PAGE, (currentPage - 1) * RECIPES_PER_PAGE).catch(() => []);
-        if (localOnly.length > 0) {
+        if (localOnly && localOnly.length > 0) {
            const normalized = localOnly.map((r: any) => ({
             ...r,
             id: r.id.toString(),
@@ -230,12 +232,14 @@ export default function SearchRecipeGrid({
             isLocal: true
           }));
           setRecipes(normalized);
-        } else {
+        } else if (recipes.length === 0) {
+          // Only show static data if we have absolutely nothing else
           const staticOffset = (currentPage - 1) * RECIPES_PER_PAGE;
           setRecipes(allRecipes.slice(staticOffset, staticOffset + RECIPES_PER_PAGE));
         }
       } finally {
         console.log('--- Hybrid Fetch End ---');
+        clearTimeout(forceClearTimer);
         setLoading(false);
       }
     };
@@ -263,14 +267,31 @@ export default function SearchRecipeGrid({
 
   return (
     <div ref={gridRef}>
-      {loading && (
-        <div className="flex justify-center items-center py-12">
-          <div className="text-gray-600">Loading recipes...</div>
+      {loading && recipes.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-24">
+          <div className="w-16 h-16 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-4"></div>
+          <div className="text-gray-400 font-medium animate-pulse">Finding the best recipes for you...</div>
         </div>
       )}
       
-      {!loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {!loading && recipes.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="text-6xl mb-6">🍳</div>
+          <h3 className="text-2xl font-black text-gray-900 mb-2">No recipes found</h3>
+          <p className="text-gray-500 max-w-md mx-auto">
+            We couldn't find any recipes matching your search. Try adjusting your filters or searching for something else!
+          </p>
+          <button 
+            onClick={() => onPageChange?.(1)}
+            className="mt-8 px-8 py-3 bg-gray-950 text-white font-bold rounded-full hover:bg-amber-500 transition-colors"
+          >
+            Clear Search
+          </button>
+        </div>
+      )}
+      
+      {(recipes.length > 0) && (
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-500 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
           {recipes.map((recipe) => (
             <RecipeCard key={recipe.id} recipe={recipe} />
           ))}
