@@ -11,6 +11,7 @@ import {
   type SpoonacularRecipe 
 } from '@/lib/spoonacularAPI';
 import WatchlistButton from '@/components/WatchlistButton';
+import { supabaseClient } from '@/lib/supabaseClient';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -142,6 +143,12 @@ export default function SearchRecipeGrid({
   useEffect(() => {
     const fetchHybridRecipes = async () => {
       console.log('--- Hybrid Fetch Start ---');
+      
+      // DIAGNOSTIC LOG: Check Auth Status before fetching
+      supabaseClient.auth.getSession().then(({ data }) => {
+        console.log(`Fetch Invoked as: ${data.session?.user ? `User (${data.session.user.email})` : 'Anonymous Guest'}`);
+      });
+      
       setLoading(true);
       setDbError(null);
       

@@ -32,19 +32,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Sync with Supabase auth state on mount
   useEffect(() => {
-    const initAuth = async () => {
-      // Safety timeout: Ensure loading always clears after 5 seconds
-      const timeout = setTimeout(() => {
-        setIsLoading(false);
-      }, 5000);
+    let mounted = true;
 
+    const initAuth = async () => {
       try {
         setIsLoading(true);
+        // Explicitly get the session first to guarantee it is loaded from storage.
         const { data: { session } } = await supabaseClient.auth.getSession();
         
-        if (session?.user) {
+        if (session?.user && mounted) {
           const profile = await authUtils.getUserProfile(session.user.id);
-          if (profile) {
+          if (profile && mounted) {
             setUser({
               id: session.user.id,
               full_name: profile.full_name || '',
@@ -57,8 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error('Failed to load auth state:', err);
       } finally {
-        clearTimeout(timeout);
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -66,10 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Subscribe to auth changes
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
+      console.log('Auth Context Event:', event);
+      if (session?.user && mounted) {
         try {
           const profile = await authUtils.getUserProfile(session.user.id);
-          if (profile) {
+          if (profile && mounted) {
             setUser({
               id: session.user.id,
               full_name: profile.full_name || '',
@@ -81,12 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (err) {
           console.error('Failed to sync user profile:', err);
         }
-      } else {
+      } else if (event === 'SIGNED_OUT' && mounted) {
+        // Only clear the user state on explicit logout
         setUser(null);
       }
     });
 
     return () => {
+      mounted = false;
       subscription?.unsubscribe();
     };
   }, []);
