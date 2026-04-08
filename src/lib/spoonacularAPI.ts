@@ -268,14 +268,14 @@ export async function searchLocalRecipes(
 
     if (error) {
       console.error('Supabase Query Error:', error.message, error.details);
-      throw error;
+      throw error; // Re-throw to allow component to capture the details
     }
 
     console.log(`DB Search Success: Found ${data?.length || 0} recipes`);
     return data || [];
   } catch (error: any) {
     console.error('Error searching local recipes:', error.message || error);
-    return [];
+    throw error; // Propagate the error up
   }
 }
 

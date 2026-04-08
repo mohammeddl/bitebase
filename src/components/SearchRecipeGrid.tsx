@@ -230,23 +230,37 @@ export default function SearchRecipeGrid({
         console.log(`Final Grid Total: ${combined.length} recipes`);
         setRecipes(combined);
         
-      } catch (error) {
+      } catch (error: any) {
         console.error('Critical failure in hybrid fetch:', error);
-        // On failure/timeout, fill with whatever local recipes we have immediately
-        const localOnly = await searchLocalRecipes(searchQuery, category, RECIPES_PER_PAGE, (currentPage - 1) * RECIPES_PER_PAGE).catch(() => []);
-        if (localOnly && localOnly.length > 0) {
-           const normalized = localOnly.map((r: any) => ({
-            ...r,
-            id: r.id.toString(),
-            img: r.image,
-            tags: [r.cuisine, r.difficulty].filter(Boolean),
-            isLocal: true
-          }));
-          setRecipes(normalized);
-        } else if (recipes.length === 0) {
-          // Only show static data if we have absolutely nothing else
-          const staticOffset = (currentPage - 1) * RECIPES_PER_PAGE;
-          setRecipes(allRecipes.slice(staticOffset, staticOffset + RECIPES_PER_PAGE));
+        const errorMsg = error.message || error.toString();
+        
+        // Show the error on screen if it's a database connection/policy issue
+        if (errorMsg.toLowerCase().includes('database') || errorMsg.toLowerCase().includes('fetch') || errorMsg.toLowerCase().includes('policy')) {
+          setDbError(`DB ERROR: ${errorMsg}`);
+        }
+
+        // On failure/timeout, fill with whatever local recipes we have immediately (last try)
+        try {
+          const localOnly = await searchLocalRecipes(searchQuery, category, RECIPES_PER_PAGE, (currentPage - 1) * RECIPES_PER_PAGE);
+          if (localOnly && localOnly.length > 0) {
+             const normalized = localOnly.map((r: any) => ({
+              ...r,
+              id: r.id.toString(),
+              img: r.image,
+              tags: [r.cuisine, r.difficulty].filter(Boolean),
+              isLocal: true
+            }));
+            setRecipes(normalized);
+          } else if (recipes.length === 0) {
+            const staticOffset = (currentPage - 1) * RECIPES_PER_PAGE;
+            setRecipes(allRecipes.slice(staticOffset, staticOffset + RECIPES_PER_PAGE));
+          }
+        } catch (innerErr) {
+          // Even the last try failed, show static data
+          if (recipes.length === 0) {
+            const staticOffset = (currentPage - 1) * RECIPES_PER_PAGE;
+            setRecipes(allRecipes.slice(staticOffset, staticOffset + RECIPES_PER_PAGE));
+          }
         }
       } finally {
         console.log('--- Hybrid Fetch End ---');
