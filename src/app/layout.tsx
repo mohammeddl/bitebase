@@ -26,6 +26,16 @@ export const metadata: Metadata = {
       'msvalidate.01': 'BING_VERIFICATION_TOKEN_HERE',
     },
   },
+  icons: {
+    icon: [
+      { url: '/icon.png' },
+      new URL('/icon.png', SITE_URL)
+    ],
+    shortcut: ['/icon.png'],
+    apple: [
+      { url: '/icon.png' },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
