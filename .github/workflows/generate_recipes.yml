@@ -17,7 +17,10 @@ jobs:
           for i in {1..20}
           do
             echo "Generating recipe $i..."
-            curl -s "https://bitebase.me/api/cron/generate?secret=${{ secrets.CRON_SECRET }}&count=1"
+            # Added -L to follow redirects (like www to non-www or trailing slash)
+            # Added trailing slash before query params
+            RESPONSE=$(curl -s -L "https://bitebase.me/api/cron/generate/?secret=${{ secrets.CRON_SECRET }}&count=1")
+            echo "Response: $RESPONSE"
             # Small sleep to be nice to the API
             sleep 2
           done
