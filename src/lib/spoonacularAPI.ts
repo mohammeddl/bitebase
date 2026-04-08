@@ -216,25 +216,27 @@ export async function searchLocalRecipes(
 
     // Filter by category if present
     if (category !== 'all') {
-      // Map frontend categories to our DB's cuisine or title matching
       const catMap: { [key: string]: string } = {
+        appetizers: 'Appetizer',
         appetizer: 'Appetizer',
+        mains: 'Main Course',
         main: 'Main Course',
         vegetarian: 'Vegetarian',
+        desserts: 'Dessert',
         dessert: 'Dessert',
         easy: 'Easy'
       };
       
-      const mappedCat = catMap[category];
+      const mappedCat = catMap[category.toLowerCase()];
       if (mappedCat) {
-        // Search in cuisine OR title OR description for the category keyword
-        supabaseQuery = supabaseQuery.or(`cuisine.ilike.%${mappedCat}%,title.ilike.%${mappedCat}%,description.ilike.%${mappedCat}%`);
+        // Search in cuisine or description primarily
+        supabaseQuery = supabaseQuery.or(`cuisine.ilike.%${mappedCat}%,description.ilike.%${mappedCat}%`);
       }
     }
 
     const { data, error } = await supabaseQuery
-      .range(offset, offset + number - 1)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + number - 1);
 
     if (error) throw error;
     return data || [];

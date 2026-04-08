@@ -138,10 +138,14 @@ export default function SearchRecipeGrid({
 
   useEffect(() => {
     const fetchHybridRecipes = async () => {
+      console.log('--- Hybrid Fetch Start ---');
       setLoading(true);
       try {
         const dbOffset = (currentPage - 1) * DB_COUNT;
         const apiOffset = (currentPage - 1) * API_COUNT;
+
+        console.log(`Fetching DB: count=${DB_COUNT}, offset=${dbOffset}, category=${category}`);
+        console.log(`Fetching API: count=${API_COUNT}, offset=${apiOffset}, query=${searchQuery}`);
 
         // Fetch parallelly for speed, but catch API errors individually
         const [dbResults, apiResults] = await Promise.all([
@@ -158,6 +162,8 @@ export default function SearchRecipeGrid({
             return []; // Return empty on API failure to trigger DB fill
           })
         ]);
+
+        console.log(`Results Rx - DB: ${dbResults?.length || 0}, API: ${apiResults?.length || 0}`);
 
         // Normalize DB recipes
         const normalizedDB = (dbResults || []).map((r: any) => ({
@@ -178,7 +184,7 @@ export default function SearchRecipeGrid({
         let combined = [...normalizedDB, ...normalizedAPI];
         
         // --- RESILIENCE LOGIC: If API failed or is empty, fill with more from DB ---
-        if (combined.length < RECIPES_PER_PAGE && dbResults.length > 0) {
+        if (combined.length < RECIPES_PER_PAGE && (dbResults?.length || 0) > 0) {
           console.log(`Grid under-filled (${combined.length}/${RECIPES_PER_PAGE}). Fetching more from DB...`);
           const missingCount = RECIPES_PER_PAGE - combined.length;
           const additionalDbResults = await searchLocalRecipes(
@@ -200,6 +206,7 @@ export default function SearchRecipeGrid({
           }
         }
         
+        console.log(`Final Grid Total: ${combined.length} recipes`);
         setRecipes(combined);
         
       } catch (error) {
@@ -208,6 +215,7 @@ export default function SearchRecipeGrid({
         const staticOffset = (currentPage - 1) * RECIPES_PER_PAGE;
         setRecipes(allRecipes.slice(staticOffset, staticOffset + RECIPES_PER_PAGE));
       } finally {
+        console.log('--- Hybrid Fetch End ---');
         setLoading(false);
       }
     };
