@@ -94,7 +94,7 @@ export default function AdminSidebar() {
         </div>
       </nav>
 
-      {/* User & Logout */}
+      {/* User  &  Logout */}
       <div className="p-4 border-t border-gray-900">
         <div className="bg-gray-900/50 rounded-3xl p-4 border border-gray-800/50">
           <div className="flex items-center gap-3 mb-4">
