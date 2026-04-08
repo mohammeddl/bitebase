@@ -264,13 +264,17 @@ export default async function RecipePage({ params }: Props) {
           {/* Rounded hero card */}
           <div
             className="relative rounded-3xl overflow-hidden mb-6"
-            style={{ background: '#F8F5F0', minHeight: '260px' }}
+            style={{ background: '#F8F5F0', minHeight: '200px' }}
           >
             {/* Left: title */}
-            <div className="relative z-10 flex flex-col justify-center h-full px-10 py-10 max-w-md">
+            <div className="relative z-10 flex flex-col justify-center h-full px-6 md:px-10 py-8 md:py-10 max-w-[60%] md:max-w-md">
               <p data-gsap="hero" className="text-xs text-gray-400 font-medium mb-2">Let&apos;s Cook</p>
-              <h1 data-gsap="hero" className="text-4xl md:text-5xl font-black text-gray-900 leading-tight">
-                {recipe.title}
+              <h1 data-gsap="hero" className="text-xl sm:text-2xl md:text-4xl font-black text-gray-900 leading-tight">
+                <span className="md:hidden">
+                  {recipe.title.split(' ').slice(0, 4).join(' ')}
+                  {recipe.title.split(' ').length > 4 ? '...' : ''}
+                </span>
+                <span className="hidden md:inline">{recipe.title}</span>
               </h1>
             </div>
 
