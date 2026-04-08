@@ -43,7 +43,7 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
       
       // 1. Generate full recipe data using Gemini
       // Added a random seed to prevent duplicates and variety
