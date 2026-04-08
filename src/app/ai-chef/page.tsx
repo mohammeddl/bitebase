@@ -5,12 +5,25 @@ import PageAnimations from '@/components/PageAnimations';
 import AIChefForm from '@/components/AIChefForm';
 import AIRecipeResult from '@/components/AIRecipeResult';
 import gsap from 'gsap';
-import { ChefHat, Sparkles, Wand2, Cookie, Utensils } from 'lucide-react';
+import { ChefHat, Sparkles, Wand2, Cookie, Utensils, Check, Search, Image as ImageIcon } from 'lucide-react';
 
 export default function AIChefPage() {
   const [loading, setLoading] = useState(false);
   const [recipe, setRecipe] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadingStep, setLoadingStep] = useState(1);
+
+  useEffect(() => {
+    let timers: NodeJS.Timeout[] = [];
+    if (loading) {
+      setLoadingStep(1);
+      timers.push(setTimeout(() => setLoadingStep(2), 4000));
+      timers.push(setTimeout(() => setLoadingStep(3), 12000));
+    } else {
+      setLoadingStep(1);
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [loading]);
 
   const generateRecipe = async (ingredients: string[], vibe: string) => {
     setLoading(true);
@@ -76,16 +89,53 @@ export default function AIChefPage() {
       
       {/* ─── Full Screen Loading Overlay ─── */}
       {loading && (
-        <div className="fixed inset-0 z-50 bg-white/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
-           <div className="relative">
-             <div className="w-28 h-28 border-8 border-amber-100 border-t-amber-500 rounded-full animate-spin" />
-             <div className="absolute inset-0 flex items-center justify-center text-4xl animate-bounce">👩‍🍳</div>
+        <div className="fixed inset-0 z-50 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300 px-6">
+           <div className="relative mb-8">
+             <div className="w-20 h-20 border-4 border-amber-100 border-t-amber-500 rounded-full animate-spin" />
+             <div className="absolute inset-0 flex items-center justify-center">
+               <Sparkles className="w-8 h-8 text-amber-500" />
+             </div>
            </div>
            
-           <h2 className="mt-8 text-3xl font-black text-gray-900 tracking-tight">Your Recipe is Cooking...</h2>
-           <p className="mt-3 font-medium text-amber-600 animate-pulse text-center max-w-sm">
-             Our AI Chef is writing the recipe and painting a beautiful photo of your dish. Please wait up to 1 minute!
+           <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-2 text-center">Cooking Magic...</h2>
+           <p className="font-medium text-gray-500 text-center max-w-sm mb-12">
+             Good food takes time. Please wait up to 60 seconds.
            </p>
+
+           <div className="w-full max-w-md mx-auto px-2 sm:px-6">
+             <div className="flex justify-between items-start relative">
+               {/* Connecting background progress line */}
+               <div className="absolute left-[15%] right-[15%] top-5 h-1 bg-gray-100 -z-10 rounded-full"></div>
+               <div 
+                 className="absolute left-[15%] top-5 h-1 bg-amber-500 -z-10 transition-all duration-700 ease-in-out rounded-full" 
+                 style={{ width: loadingStep === 1 ? '0%' : loadingStep === 2 ? '50%' : '70%' }}
+               ></div>
+
+               {/* Step 1 */}
+               <div className="flex flex-col items-center gap-3 relative z-10 w-1/3">
+                 <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${loadingStep === 1 ? 'bg-amber-500 text-white shadow-lg ring-4 ring-amber-100 scale-110' : loadingStep > 1 ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                   {loadingStep > 1 ? <Check size={18} strokeWidth={3} /> : <Search size={18} />}
+                 </div>
+                 <span className={`text-[11px] sm:text-xs font-bold text-center tracking-wide uppercase transition-colors ${loadingStep >= 1 ? 'text-gray-900' : 'text-gray-400'}`}>Analyzing<br/>Ingredients</span>
+               </div>
+
+               {/* Step 2 */}
+               <div className="flex flex-col items-center gap-3 relative z-10 w-1/3">
+                 <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${loadingStep === 2 ? 'bg-amber-500 text-white shadow-lg ring-4 ring-amber-100 scale-110' : loadingStep > 2 ? 'bg-amber-500 text-white' : 'bg-white border-2 border-gray-100 text-gray-400'}`}>
+                   {loadingStep > 2 ? <Check size={18} strokeWidth={3} /> : <Wand2 size={18} />}
+                 </div>
+                 <span className={`text-[11px] sm:text-xs font-bold text-center tracking-wide uppercase transition-colors ${loadingStep >= 2 ? 'text-gray-900' : 'text-gray-400'}`}>Crafting<br/>Recipe</span>
+               </div>
+
+               {/* Step 3 */}
+               <div className="flex flex-col items-center gap-3 relative z-10 w-1/3">
+                 <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${loadingStep === 3 ? 'bg-amber-500 text-white shadow-lg ring-4 ring-amber-100 scale-110' : loadingStep > 3 ? 'bg-amber-500 text-white' : 'bg-white border-2 border-gray-100 text-gray-400'}`}>
+                   {loadingStep > 3 ? <Check size={18} strokeWidth={3} /> : <ImageIcon size={18} />}
+                 </div>
+                 <span className={`text-[11px] sm:text-xs font-bold text-center tracking-wide uppercase transition-colors ${loadingStep >= 3 ? 'text-gray-900' : 'text-gray-400'}`}>Visualizing<br/>Dish</span>
+               </div>
+             </div>
+           </div>
         </div>
       )}
 
