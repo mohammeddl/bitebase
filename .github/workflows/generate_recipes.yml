@@ -23,5 +23,9 @@ jobs:
             RESPONSE=$(curl -s -L "https://bitebase.me/api/cron/generate/?secret=${{ secrets.CRON_SECRET }}&count=1")
             echo "Response: $RESPONSE"
             # Increased sleep for Gemini Free Tier (stay under 15 RPM)
-            sleep 12
           done
+
+      - name: Ping IndexNow
+        run: |
+          echo "Pinging IndexNow for instant indexing..."
+          curl -X POST -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" https://bitebase.me/api/submit-sitemap
