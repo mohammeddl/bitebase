@@ -13,7 +13,7 @@ const navLinks = [
   { href: '/', label: 'HOME' },
   { href: '/about', label: 'ABOUT' },
   { href: '/search', label: 'RECIPES' },
-  { href: '/ai-chef', label: 'AI CHEF' },
+  { href: '/ai-chef', label: 'AI CHEF', isNew: true },
   { href: '/contact', label: 'CONTACT' },
 ];
 
@@ -57,13 +57,18 @@ export default function SiteHeader() {
 
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-8">
-              {navLinks.map(({ href, label }) => (
+              {navLinks.map(({ href, label, isNew }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="text-xs font-semibold tracking-widest text-gray-600 hover:text-amber-500 transition-colors"
+                  className="relative text-xs font-semibold tracking-widest text-gray-600 hover:text-amber-500 transition-colors group"
                 >
                   {label}
+                  {isNew && (
+                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-amber-500 text-[8px] font-black text-white rounded-full leading-none animate-pulse shadow-sm shadow-amber-200">
+                      NEW
+                    </span>
+                  )}
                 </Link>
               ))}
             </nav>
@@ -195,12 +200,12 @@ export default function SiteHeader() {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm md:hidden"
             onClick={() => setBurgerOpen(false)}
           />
 
           {/* Slide-in panel */}
-          <div className="fixed top-0 right-0 h-full w-72 bg-white z-[70] shadow-2xl flex flex-col md:hidden"
+          <div className="fixed top-0 right-0 h-full w-72 bg-white z-70 shadow-2xl flex flex-col md:hidden"
             style={{ animation: 'slideInRight 0.3s ease-out' }}
           >
             {/* Drawer header */}
@@ -233,14 +238,19 @@ export default function SiteHeader() {
 
             {/* Nav links */}
             <nav className="flex flex-col px-4 py-4 gap-1 flex-1">
-              {navLinks.map(({ href, label }) => (
+              {navLinks.map(({ href, label, isNew }) => (
                 <Link
                   key={href}
                   href={href}
                   onClick={() => setBurgerOpen(false)}
-                  className="flex items-center px-4 py-3.5 rounded-2xl text-sm font-semibold text-gray-700 hover:bg-amber-50 hover:text-amber-600 transition-colors"
+                  className="flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold text-gray-700 hover:bg-amber-50 hover:text-amber-600 transition-colors group"
                 >
                   {label}
+                  {isNew && (
+                    <span className="bg-amber-500 text-[9px] font-black text-white px-2 py-0.5 rounded-full animate-pulse shadow-sm shadow-amber-200">
+                      NEW
+                    </span>
+                  )}
                 </Link>
               ))}
 

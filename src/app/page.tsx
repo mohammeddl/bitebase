@@ -70,10 +70,13 @@ export default function Home() {
                 </Link>
                 <Link
                   href="/ai-chef"
-                  className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 hover:border-gray-900 font-semibold py-3 px-6 rounded-full transition-colors text-sm"
+                  className="relative inline-flex items-center gap-2 border border-gray-300 text-gray-700 hover:border-gray-900 font-semibold py-3 px-6 rounded-full transition-colors text-sm group"
                 >
                   Try AI Chef
                   <span className="text-xs">🪄</span>
+                  <span className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-amber-500 text-[8px] font-black text-white rounded-full leading-none shadow-sm group-hover:scale-110 transition-transform">
+                    NEW
+                  </span>
                 </Link>
               </div>
             </div>
