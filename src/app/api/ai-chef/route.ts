@@ -1,14 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-// Try models in order — each model has its own independent daily quota
-// gemini-1.5-flash has a SEPARATE quota from gemini-2.0-flash
-const MODEL_FALLBACKS = [
-  "gemini-1.5-flash",        // Separate quota — most reliable
-  "gemini-1.5-flash-latest", // Alias, sometimes different bucket
-  "gemini-2.0-flash",        // Newer, but shares quota with gemini-3-flash
-  "gemini-2.0-flash-lite",   // Lightweight fallback
-];
+// gemini-flash-latest = gemini-3-flash (was working before)
+const MODEL = "gemini-flash-latest";
 
 function getApiKeys(): string[] {
   return [
@@ -29,42 +23,28 @@ function isRateLimitError(err: any): boolean {
   );
 }
 
-/**
- * Strategy: iterate models first, then keys.
- * A rate limit is per-model-per-day, so if gemini-2.0-flash is exhausted
- * on key1, it will also be exhausted on key2. Move to the NEXT MODEL instead.
- */
-async function generateWithFallback(prompt: string) {
+// Try each API key in order — if one is rate limited, the next one takes over
+async function generateWithKeyRotation(prompt: string) {
   const apiKeys = getApiKeys();
+  if (apiKeys.length === 0) throw new Error("NO_API_KEY");
 
-  for (const modelName of MODEL_FALLBACKS) {
-    for (const apiKey of apiKeys) {
-      try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        console.log(`[ai-chef] ✅ Success: model=${modelName}, key=...${apiKey.slice(-6)}`);
-        return result;
-      } catch (err: any) {
-        if (isRateLimitError(err)) {
-          // Rate limited on this model — try next key, but if all keys fail we'll move to next model
-          console.warn(`[ai-chef] Rate limit: model=${modelName}, key=...${apiKey.slice(-6)}`);
-          continue;
-        }
-        if (err.message?.includes("404") || err.message?.includes("not found")) {
-          // Model not available for this key — skip both model and remaining keys
-          console.warn(`[ai-chef] Model not found: ${modelName}`);
-          break; // break inner key loop, try next model
-        }
-        // Other error — log and try next key
-        console.warn(`[ai-chef] Error: model=${modelName}, key=...${apiKey.slice(-6)}:`, err.message);
+  for (const apiKey of apiKeys) {
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: MODEL });
+      const result = await model.generateContent(prompt);
+      console.log(`[ai-chef] ✅ Success with key ...${apiKey.slice(-6)}`);
+      return result;
+    } catch (err: any) {
+      if (isRateLimitError(err)) {
+        console.warn(`[ai-chef] Rate limit on key ...${apiKey.slice(-6)}, trying next key...`);
+        continue; // Try next key
       }
+      throw err; // Non-rate-limit error — don't retry
     }
-    // If we get here, all keys failed for this model — move to next model
-    console.warn(`[ai-chef] All keys failed for model=${modelName}, trying next model...`);
   }
 
-  throw new Error("All models and API keys exhausted");
+  throw Object.assign(new Error("All keys rate limited"), { isRateLimit: true });
 }
 
 export async function POST(req: Request) {
@@ -94,7 +74,7 @@ export async function POST(req: Request) {
       }
     `;
 
-    const result = await generateWithFallback(prompt);
+    const result = await generateWithKeyRotation(prompt);
     const response = await result.response;
     const text = response.text();
 
@@ -133,14 +113,14 @@ export async function POST(req: Request) {
       );
     }
   } catch (error: any) {
-    console.error("[ai-chef] Final error:", error.message);
+    console.error("[ai-chef] Error:", error.message);
 
-    const isRateLimit = isRateLimitError(error) || error.message?.includes("exhausted");
+    const isRateLimit = error.isRateLimit || isRateLimitError(error);
 
     return NextResponse.json(
       {
         error: isRateLimit
-          ? "Our AI chef is taking a well-deserved break after cooking so many recipes! Please try again in a few minutes. 🍳"
+          ? "Our AI chef is resting after cooking too many recipes today! Try again in a few minutes. 🍳"
           : "Our kitchen is a bit busy right now. Please try again in a moment!",
       },
       { status: 500 }
