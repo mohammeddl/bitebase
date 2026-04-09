@@ -30,6 +30,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Helper: build a basic user from Supabase session (no DB required)
+  const userFromSession = (sessionUser: any): UserProfile => ({
+    id: sessionUser.id,
+    full_name:
+      sessionUser.user_metadata?.full_name ||
+      sessionUser.email?.split('@')[0] ||
+      'User',
+    email: sessionUser.email || '',
+    avatar_url: sessionUser.user_metadata?.avatar_url || null,
+    role: 'user',
+  });
+
   // Sync with Supabase auth state on mount
   useEffect(() => {
     let mounted = true;
@@ -37,52 +49,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initAuth = async () => {
       try {
         setIsLoading(true);
-        // Explicitly get the session first to guarantee it is loaded from storage.
         const { data: { session } } = await supabaseClient.auth.getSession();
-        
+
         if (session?.user && mounted) {
-          const profile = await authUtils.getUserProfile(session.user.id);
-          if (profile && mounted) {
-            setUser({
-              id: session.user.id,
-              full_name: profile.full_name || '',
-              email: profile.email || '',
-              avatar_url: profile.avatar_url || null,
-              role: profile.role || 'user',
-            });
-          }
+          // ✅ Set user immediately from session — no DB needed
+          setUser(userFromSession(session.user));
+
+          // Then try to enrich with DB profile (non-blocking)
+          authUtils.getUserProfile(session.user.id).then((profile) => {
+            if (profile && mounted) {
+              setUser({
+                id: session.user.id,
+                full_name: profile.full_name || '',
+                email: profile.email || '',
+                avatar_url: profile.avatar_url || null,
+                role: profile.role || 'user',
+              });
+            }
+          }).catch(() => {
+            // Profile fetch failed — keep using session data (user stays logged in)
+          });
         }
       } catch (err) {
         console.error('Failed to load auth state:', err);
       } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
+        if (mounted) setIsLoading(false);
       }
     };
 
     initAuth();
 
-    // Subscribe to auth changes
+    // Subscribe to real-time auth changes
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth Context Event:', event);
-      if (session?.user && mounted) {
-        try {
-          const profile = await authUtils.getUserProfile(session.user.id);
+      if (!mounted) return;
+
+      if (session?.user) {
+        // ✅ Always set user from session first
+        setUser(userFromSession(session.user));
+
+        // Then enrich from DB profile
+        authUtils.getUserProfile(session.user.id).then((profile) => {
           if (profile && mounted) {
             setUser({
-              id: session.user.id,
+              id: session.user!.id,
               full_name: profile.full_name || '',
               email: profile.email || '',
               avatar_url: profile.avatar_url || null,
               role: profile.role || 'user',
             });
           }
-        } catch (err) {
-          console.error('Failed to sync user profile:', err);
-        }
-      } else if (event === 'SIGNED_OUT' && mounted) {
-        // Only clear the user state on explicit logout
+        }).catch(() => {});
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
     });
