@@ -2,6 +2,10 @@ import { MetadataRoute } from 'next';
 import { SITE_URL } from '@/lib/seo';
 import { createClient } from '@supabase/supabase-js';
 
+// Force dynamic rendering — always fetch fresh recipes from Supabase
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Use server-side admin client to bypass RLS and get ALL recipes
 function getSupabaseServer() {
   return createClient(
