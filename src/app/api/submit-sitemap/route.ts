@@ -20,21 +20,26 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SECRET_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    // Fetch all recipe slugs/ids
-    let allSlugs: string[] = [];
+    // Fetch all recipe IDs - only select 'id' to avoid errors from missing columns
+    let allIds: string[] = [];
     let from = 0;
     const batchSize = 1000;
 
     while (true) {
       const { data, error } = await supabase
         .from('recipes')
-        .select('id, slug')
+        .select('id')
         .range(from, from + batchSize - 1);
 
-      if (error || !data || data.length === 0) break;
+      if (error) {
+        console.error('[submit-sitemap] Supabase error:', error.message, error.details);
+        break;
+      }
 
-      data.forEach((r: { id: string; slug?: string }) => {
-        allSlugs.push(r.slug || r.id);
+      if (!data || data.length === 0) break;
+
+      data.forEach((r: { id: string }) => {
+        allIds.push(String(r.id));
       });
 
       if (data.length < batchSize) break;
@@ -47,8 +52,10 @@ export async function POST(request: NextRequest) {
       `${SITE_URL}/`,
       `${SITE_URL}/search`,
       `${SITE_URL}/ai-chef`,
+      `${SITE_URL}/about`,
+      `${SITE_URL}/contact`,
       // All recipe pages
-      ...allSlugs.map((slug) => `${SITE_URL}/recipe/${slug}`),
+      ...allIds.map((id) => `${SITE_URL}/recipe/${id}`),
     ];
 
     const host = new URL(SITE_URL).hostname;
@@ -97,7 +104,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       totalUrls: urls.length,
-      recipeCount: allSlugs.length,
+      recipeCount: allIds.length,
       chunks: chunks.length,
       results,
     });

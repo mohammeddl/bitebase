@@ -39,15 +39,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const supabase = getSupabaseServer();
 
-    // Fetch all recipes in batches of 1000 (Supabase max per request)
-    let allRecipes: { id: string; slug?: string; updated_at?: string; created_at?: string }[] = [];
+    // Only select 'id' — avoids errors if 'slug' column doesn't exist
+    let allRecipes: { id: string; updated_at?: string; created_at?: string }[] = [];
     let from = 0;
     const batchSize = 1000;
 
     while (true) {
       const { data, error } = await supabase
         .from('recipes')
-        .select('id, slug, updated_at, created_at')
+        .select('id, updated_at, created_at')
         .order('created_at', { ascending: false })
         .range(from, from + batchSize - 1);
 
@@ -60,21 +60,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       allRecipes = [...allRecipes, ...data];
 
-      // If we got fewer than batchSize items, we've fetched everything
       if (data.length < batchSize) break;
-
       from += batchSize;
     }
 
     console.log(`[sitemap] Found ${allRecipes.length} recipes in Supabase`);
 
     recipeRoutes = allRecipes.map((recipe) => {
-      // Use slug if available, otherwise fall back to id
-      const identifier = recipe.slug || recipe.id;
       const lastMod = recipe.updated_at || recipe.created_at;
-
       return {
-        url: `${SITE_URL}/recipe/${identifier}`,
+        url: `${SITE_URL}/recipe/${recipe.id}`,
         lastModified: lastMod ? new Date(lastMod) : new Date(),
         changeFrequency: 'weekly' as const,
         priority: 0.8,
