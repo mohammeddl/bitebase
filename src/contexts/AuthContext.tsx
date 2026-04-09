@@ -52,26 +52,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session } } = await supabaseClient.auth.getSession();
 
         if (session?.user && mounted) {
-          // ✅ Set user immediately from session — no DB needed
-          setUser(userFromSession(session.user));
+          // 1. Start with session data as a base
+          const initialUser = userFromSession(session.user);
+          setUser(initialUser);
 
-          // Then try to enrich with DB profile (non-blocking)
-          authUtils.getUserProfile(session.user.id).then((profile) => {
+          // 2. ✅ Await DB enrichment to get the correct role
+          try {
+            const profile = await authUtils.getUserProfile(session.user.id);
             if (profile && mounted) {
               setUser({
                 id: session.user.id,
-                full_name: profile.full_name || '',
-                email: profile.email || '',
-                avatar_url: profile.avatar_url || null,
+                full_name: profile.full_name || initialUser.full_name,
+                email: profile.email || initialUser.email,
+                avatar_url: profile.avatar_url || initialUser.avatar_url,
                 role: profile.role || 'user',
               });
             }
-          }).catch(() => {
-            // Profile fetch failed — keep using session data (user stays logged in)
-          });
+          } catch (profileErr) {
+            console.error('[AuthContext] Profile enrichment failed:', profileErr);
+            // Non-fatal: user stays logged in with session-based 'user' role
+          }
         }
       } catch (err) {
-        console.error('Failed to load auth state:', err);
+        console.error('[AuthContext] Auth initialization failed:', err);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -84,21 +87,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
 
       if (session?.user) {
-        // ✅ Always set user from session first
-        setUser(userFromSession(session.user));
+        const initialUser = userFromSession(session.user);
+        setUser(initialUser);
 
-        // Then enrich from DB profile
-        authUtils.getUserProfile(session.user.id).then((profile) => {
+        // Enrichment
+        try {
+          const profile = await authUtils.getUserProfile(session.user.id);
           if (profile && mounted) {
             setUser({
-              id: session.user!.id,
-              full_name: profile.full_name || '',
-              email: profile.email || '',
-              avatar_url: profile.avatar_url || null,
+              id: session.user.id,
+              full_name: profile.full_name || initialUser.full_name,
+              email: profile.email || initialUser.email,
+              avatar_url: profile.avatar_url || initialUser.avatar_url,
               role: profile.role || 'user',
             });
           }
-        }).catch(() => {});
+        } catch (err) {
+          console.error('[AuthContext] Auth change profile sync failed:', err);
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
