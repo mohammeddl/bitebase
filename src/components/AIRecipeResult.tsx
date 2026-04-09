@@ -118,6 +118,35 @@ export default function AIRecipeResult({ recipe }: { recipe: Recipe }) {
                 >
                   <Heart size={20} className={`transition-colors ${saved ? 'fill-white' : 'group-hover:fill-gray-900'}`} />
                 </button>
+
+                <button 
+                  onClick={() => {
+                    const text = `Hey! Check out this ${recipe.title} I just created on BiteBase: ${window.location.href}`;
+                    if (navigator.share) {
+                      navigator.share({
+                        title: recipe.title,
+                        text: recipe.description,
+                        url: window.location.href
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(text);
+                      Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Link copied to clipboard!',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                      });
+                    }
+                  }}
+                  title="Share Recipe"
+                  className="w-12 h-12 rounded-2xl bg-white/10 text-white flex items-center justify-center hover:bg-white hover:text-gray-900 transition-all backdrop-blur-sm"
+                >
+                  <Share2 size={20} />
+                </button>
+
                 <button 
                   onClick={() => window.print()}
                   title="Save as PDF / Print"

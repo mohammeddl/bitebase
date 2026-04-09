@@ -45,7 +45,7 @@ export default function About() {
                 priority
               />
               {/* Fade to white on the left edge of image */}
-              <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-gray-50 to-transparent" />
+              <div className="absolute inset-y-0 left-0 w-1/3 bg-linear-to-r from-gray-50 to-transparent" />
             </div>
 
             {/* Text on the left */}

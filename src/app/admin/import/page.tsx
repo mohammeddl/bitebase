@@ -231,7 +231,7 @@ export default function AdminImportPage() {
                   className={`w-full py-4 rounded-2xl flex items-center justify-center gap-3 font-black text-lg transition-all ${
                     isImporting 
                     ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98]'
+                    : 'bg-linear-to-r from-amber-500 to-orange-500 text-white shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98]'
                   }`}
                 >
                   {isImporting ? (

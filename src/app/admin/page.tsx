@@ -77,7 +77,7 @@ export default function AdminDashboard() {
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Link href="/admin/import" className="group">
-            <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-8 rounded-3xl text-white relative overflow-hidden h-full">
+            <div className="bg-linear-to-br from-amber-500 to-orange-600 p-8 rounded-3xl text-white relative overflow-hidden h-full">
               <div className="relative z-10">
                 <h3 className="text-2xl font-black mb-2 flex items-center gap-2">
                   <Download className="w-6 h-6" /> Import New Data

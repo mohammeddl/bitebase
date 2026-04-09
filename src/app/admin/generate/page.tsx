@@ -94,7 +94,7 @@ export default function AIGeneratorPage() {
     <div className="space-y-8 max-w-5xl mx-auto pb-20">
       
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-amber-500/10 via-transparent to-transparent p-1 border-b border-amber-500/20 mb-12">
+      <div className="bg-linear-to-r from-amber-500/10 via-transparent to-transparent p-1 border-b border-amber-500/20 mb-12">
         <div className="flex items-center gap-4 mb-2">
           <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-black shadow-lg shadow-amber-500/20 animate-pulse">
             <Sparkles size={24} />
@@ -169,7 +169,7 @@ export default function AIGeneratorPage() {
                 className={`w-full py-6 rounded-[1.5rem] flex items-center justify-center gap-4 font-black text-xl transition-all relative overflow-hidden group ${
                   isGenerating 
                   ? 'bg-gray-800 text-gray-600 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-2xl shadow-amber-500/20 hover:scale-[1.01] active:scale-[0.99]'
+                  : 'bg-linear-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-2xl shadow-amber-500/20 hover:scale-[1.01] active:scale-[0.99]'
                 }`}
               >
                 {isGenerating ? (
