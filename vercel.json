@@ -4,28 +4,5 @@
       "path": "/api/cron/generate",
       "schedule": "0 0 * * *"
     }
-  ],
-  "redirects": [
-    {
-      "source": "https://bitebase.me/sitemap.xml",
-      "destination": "https://bitebase.me/sitemap.xml",
-      "has": [{ "type": "host", "value": "bitebase.me" }],
-      "permanent": false
-    }
-  ],
-  "headers": [
-    {
-      "source": "/sitemap.xml",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" },
-        { "key": "X-Robots-Tag", "value": "noindex" }
-      ]
-    },
-    {
-      "source": "/robots.txt",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
-      ]
-    }
   ]
 }
