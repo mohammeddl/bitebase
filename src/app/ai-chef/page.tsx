@@ -1,17 +1,84 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import PageAnimations from '@/components/PageAnimations';
 import AIChefForm from '@/components/AIChefForm';
 import AIRecipeResult from '@/components/AIRecipeResult';
 import gsap from 'gsap';
-import { ChefHat, Sparkles, Wand2, Cookie, Utensils, Check, Search, Image as ImageIcon } from 'lucide-react';
+import { ChefHat, Sparkles, Wand2, Cookie, Utensils, Check, Search, Image as ImageIcon, Clock, ArrowRight, Flame } from 'lucide-react';
+
+const DAILY_LIMIT = 5;
+const STORAGE_KEY = 'ai_chef_usage';
+
+function getUsage(): { count: number; date: string } {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { count: 0, date: '' };
+    return JSON.parse(raw);
+  } catch {
+    return { count: 0, date: '' };
+  }
+}
+
+function getTodayStr() {
+  return new Date().toISOString().split('T')[0]; // e.g. '2026-04-09'
+}
+
+function incrementUsage(): number {
+  const today = getTodayStr();
+  const usage = getUsage();
+  const count = usage.date === today ? usage.count + 1 : 1;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ count, date: today }));
+  return count;
+}
+
+function getRemainingCount(): number {
+  const today = getTodayStr();
+  const usage = getUsage();
+  if (usage.date !== today) return DAILY_LIMIT;
+  return Math.max(0, DAILY_LIMIT - usage.count);
+}
+
+function getMidnightCountdown(): string {
+  const now = new Date();
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0);
+  const diff = midnight.getTime() - now.getTime();
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
 export default function AIChefPage() {
   const [loading, setLoading] = useState(false);
   const [recipe, setRecipe] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingStep, setLoadingStep] = useState(1);
+  const [remaining, setRemaining] = useState(DAILY_LIMIT);
+  const [countdown, setCountdown] = useState('');
+
+  // Load remaining count from localStorage on mount
+  useEffect(() => {
+    setRemaining(getRemainingCount());
+  }, []);
+
+  // Live countdown clock (only runs when limit is hit)
+  useEffect(() => {
+    if (remaining > 0) return;
+    setCountdown(getMidnightCountdown());
+    const interval = setInterval(() => {
+      setCountdown(getMidnightCountdown());
+      // Auto-reset if the day changed
+      const newRemaining = getRemainingCount();
+      if (newRemaining > 0) {
+        setRemaining(newRemaining);
+        clearInterval(interval);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [remaining]);
 
   useEffect(() => {
     let timers: NodeJS.Timeout[] = [];
@@ -26,6 +93,7 @@ export default function AIChefPage() {
   }, [loading]);
 
   const generateRecipe = async (ingredients: string[], vibe: string) => {
+    if (remaining <= 0) return; // Guard
     setLoading(true);
     setError(null);
     setRecipe(null);
@@ -38,13 +106,13 @@ export default function AIChefPage() {
       });
       
       const data = await response.json();
-      
       if (!response.ok) throw new Error(data.error || 'Failed to generate recipe');
       
-      // The AI Image is now fetched securely by the server and arrives inside data.imageUrl as a base64 string
+      // ✅ Increment usage count on success
+      const newCount = incrementUsage();
+      setRemaining(Math.max(0, DAILY_LIMIT - newCount));
+
       setRecipe(data);
-      
-      // Smooth scroll down to the results area after it appears
       setTimeout(() => {
         document.getElementById('recipe-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 150);
@@ -162,12 +230,84 @@ export default function AIChefPage() {
             </p>
           </div>
 
-          {/* Generator Form */}
-          <div className="bg-white p-2 sm:p-4 rounded-[3rem] border border-gray-100 shadow-xl shadow-gray-200/40 mb-20">
-            <div className="bg-white rounded-[2.5rem] p-8 sm:p-12">
-               <AIChefForm onGenerate={generateRecipe} isLoading={loading} />
+          {/* Usage indicator */}
+          {remaining > 0 && (
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-100 rounded-full text-sm font-semibold text-amber-700">
+                <Flame size={14} className="text-amber-500" />
+                {remaining} of {DAILY_LIMIT} free generations remaining today
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Generator Form OR Limit Reached */}
+          {remaining > 0 ? (
+            <div className="bg-white p-2 sm:p-4 rounded-[3rem] border border-gray-100 shadow-xl shadow-gray-200/40 mb-20">
+              <div className="bg-white rounded-[2.5rem] p-8 sm:p-12">
+                <AIChefForm onGenerate={generateRecipe} isLoading={loading} />
+              </div>
+            </div>
+          ) : (
+            /* ─── Limit Reached Banner ─── */
+            <div className="mb-20 rounded-[3rem] border border-amber-100 bg-linear-to-br from-amber-50 via-orange-50 to-rose-50 p-2 shadow-xl shadow-amber-100/40">
+              <div className="rounded-[2.5rem] bg-white/70 backdrop-blur-sm p-10 sm:p-14 text-center">
+                {/* Icon */}
+                <div className="w-20 h-20 bg-amber-500 rounded-3xl rotate-3 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-amber-200">
+                  <ChefHat size={36} className="text-white -rotate-3" />
+                </div>
+
+                <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-3">
+                  Daily Limit Reached! 🍳
+                </h2>
+                <p className="text-gray-500 font-medium max-w-sm mx-auto mb-8 leading-relaxed">
+                  You&apos;ve used all <span className="font-black text-gray-800">{DAILY_LIMIT} free AI generations</span> for today.
+                  Your limit resets at midnight.
+                </p>
+
+                {/* Countdown */}
+                <div className="inline-flex flex-col items-center gap-2 px-8 py-5 bg-gray-950 rounded-2xl mb-8">
+                  <div className="flex items-center gap-2 text-amber-400 text-xs font-black uppercase tracking-widest">
+                    <Clock size={12} />
+                    Resets in
+                  </div>
+                  <div className="text-4xl font-black text-white font-mono tracking-tight">
+                    {countdown}
+                  </div>
+                </div>
+
+                {/* Progress dots */}
+                <div className="flex justify-center gap-2 mb-10">
+                  {Array.from({ length: DAILY_LIMIT }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-3 h-3 rounded-full bg-amber-500 shadow-sm"
+                    />
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link
+                    href="/search"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-amber-500 hover:bg-amber-600 text-white font-black text-sm rounded-2xl transition-all shadow-lg shadow-amber-200 hover:shadow-amber-300 hover:-translate-y-0.5"
+                  >
+                    Browse 250+ Recipes
+                    <ArrowRight size={16} />
+                  </Link>
+                  <Link
+                    href="/"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-sm rounded-2xl transition-all"
+                  >
+                    Go Home
+                  </Link>
+                </div>
+
+                <p className="mt-6 text-xs text-gray-400 font-medium">
+                  Come back tomorrow for {DAILY_LIMIT} more free generations ✨
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Results section */}
           <div id="recipe-result" className="min-h-[200px] flex items-center justify-center">
