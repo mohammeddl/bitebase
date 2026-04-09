@@ -3,11 +3,13 @@ import { NextResponse } from "next/server";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || "");
 
-// Try models in order — automatically falls back if one is unavailable
+// Try models in order — uses latest available, falls back automatically
 const MODEL_FALLBACKS = [
+  "gemini-2.5-flash-preview-04-17",
   "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
   "gemini-1.5-flash",
-  "gemini-pro",
+  "gemini-1.5-flash-latest",
 ];
 
 async function generateWithFallback(prompt: string) {
@@ -19,6 +21,10 @@ async function generateWithFallback(prompt: string) {
       return result;
     } catch (err: any) {
       console.warn(`[ai-chef] Model "${modelName}" failed:`, err.message);
+      // If it's a rate limit (429), don't bother trying other models — they'll hit the same limit
+      if (err.message?.includes("429") || err.message?.toLowerCase().includes("quota") || err.message?.toLowerCase().includes("rate")) {
+        throw Object.assign(err, { isRateLimit: true });
+      }
       lastError = err;
     }
   }
@@ -97,9 +103,20 @@ export async function POST(req: Request) {
   } catch (error: any) {
     // Log technical details server-side only — never expose to user
     console.error("[ai-chef] Generation Error:", error.message);
+
+    const isRateLimit = error.isRateLimit ||
+      error.message?.includes("429") ||
+      error.message?.toLowerCase().includes("quota") ||
+      error.message?.toLowerCase().includes("rate limit");
+
     return NextResponse.json(
-      { error: "Our kitchen is a bit busy right now. Please try again in a moment!" },
+      {
+        error: isRateLimit
+          ? "Our AI chef is resting after cooking too many recipes today! Come back in a few minutes and try again. 🍳"
+          : "Our kitchen is a bit busy right now. Please try again in a moment!",
+      },
       { status: 500 }
     );
   }
 }
+
