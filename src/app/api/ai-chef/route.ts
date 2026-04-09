@@ -1,9 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || "");
-
-// Try models in order — uses latest available, falls back automatically
+// Models to try in order
 const MODEL_FALLBACKS = [
   "gemini-2.5-flash-preview-04-17",
   "gemini-2.0-flash",
@@ -12,30 +10,60 @@ const MODEL_FALLBACKS = [
   "gemini-1.5-flash-latest",
 ];
 
-async function generateWithFallback(prompt: string) {
-  let lastError: any;
-  for (const modelName of MODEL_FALLBACKS) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      return result;
-    } catch (err: any) {
-      console.warn(`[ai-chef] Model "${modelName}" failed:`, err.message);
-      // If it's a rate limit (429), don't bother trying other models — they'll hit the same limit
-      if (err.message?.includes("429") || err.message?.toLowerCase().includes("quota") || err.message?.toLowerCase().includes("rate")) {
-        throw Object.assign(err, { isRateLimit: true });
+// Build list of available API keys (key rotation)
+function getApiKeys(): string[] {
+  const keys = [
+    process.env.GOOGLE_GEMINI_API_KEY,
+    process.env.GOOGLE_GEMINI_API_KEY_2,
+    process.env.GOOGLE_GEMINI_API_KEY_3,
+  ].filter((k): k is string => !!k && k.length > 0);
+  return keys;
+}
+
+function isRateLimitError(err: any): boolean {
+  const msg = err?.message?.toLowerCase() || "";
+  return (
+    msg.includes("429") ||
+    msg.includes("quota") ||
+    msg.includes("rate limit") ||
+    msg.includes("resource_exhausted")
+  );
+}
+
+async function generateWithKeyRotation(prompt: string) {
+  const apiKeys = getApiKeys();
+  if (apiKeys.length === 0) throw new Error("NO_API_KEY");
+
+  for (const apiKey of apiKeys) {
+    const genAI = new GoogleGenerativeAI(apiKey);
+
+    for (const modelName of MODEL_FALLBACKS) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        console.log(`[ai-chef] ✅ Success with key ...${apiKey.slice(-6)}, model: ${modelName}`);
+        return result;
+      } catch (err: any) {
+        if (isRateLimitError(err)) {
+          console.warn(`[ai-chef] Rate limit on key ...${apiKey.slice(-6)}, model: ${modelName}. Trying next key...`);
+          break; // Skip remaining models for this key, try next API key
+        }
+        console.warn(`[ai-chef] Model "${modelName}" failed:`, err.message);
+        // Not a rate limit — try next model with same key
       }
-      lastError = err;
     }
   }
-  throw lastError;
+
+  // All keys and models exhausted
+  throw Object.assign(new Error("All API keys exhausted"), { isRateLimit: true });
 }
 
 export async function POST(req: Request) {
   try {
     const { ingredients, vibe } = await req.json();
 
-    if (!process.env.GOOGLE_GEMINI_API_KEY) {
+    const apiKeys = getApiKeys();
+    if (apiKeys.length === 0) {
       return NextResponse.json(
         { error: "Our kitchen is taking a quick break. Please try again in a moment!" },
         { status: 500 }
@@ -58,7 +86,7 @@ export async function POST(req: Request) {
       }
     `;
 
-    const result = await generateWithFallback(prompt);
+    const result = await generateWithKeyRotation(prompt);
     const response = await result.response;
     const text = response.text();
 
@@ -66,15 +94,13 @@ export async function POST(req: Request) {
     let jsonStr = text;
     if (text.includes("```")) {
       const match = text.match(/```(?:json)?([\s\S]*?)```/);
-      if (match && match[1]) {
-        jsonStr = match[1].trim();
-      }
+      if (match && match[1]) jsonStr = match[1].trim();
     }
 
     try {
       const recipe = JSON.parse(jsonStr);
 
-      // Fetch the image SERVER-SIDE to bypass adblockers and CORS issues
+      // Fetch image server-side to bypass adblockers and CORS
       try {
         const encodedQuery = encodeURIComponent(
           `${recipe.title}, stunning professional food photography, cinematic lighting, 4k`
@@ -89,7 +115,6 @@ export async function POST(req: Request) {
         }
       } catch (imgError) {
         console.error("[ai-chef] Image generation failed:", imgError);
-        // Non-fatal — recipe still works without image
       }
 
       return NextResponse.json(recipe);
@@ -101,13 +126,11 @@ export async function POST(req: Request) {
       );
     }
   } catch (error: any) {
-    // Log technical details server-side only — never expose to user
     console.error("[ai-chef] Generation Error:", error.message);
 
-    const isRateLimit = error.isRateLimit ||
-      error.message?.includes("429") ||
-      error.message?.toLowerCase().includes("quota") ||
-      error.message?.toLowerCase().includes("rate limit");
+    const isRateLimit =
+      error.isRateLimit ||
+      isRateLimitError(error);
 
     return NextResponse.json(
       {
@@ -119,4 +142,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
