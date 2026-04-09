@@ -7,11 +7,9 @@ import { allRecipes, Recipe } from '@/lib/recipes';
 import { 
   searchRecipesByCategory, 
   searchRecipes, 
-  searchLocalRecipes, 
   type SpoonacularRecipe 
 } from '@/lib/spoonacularAPI';
 import WatchlistButton from '@/components/WatchlistButton';
-import { supabaseClient } from '@/lib/supabaseClient';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -142,20 +140,11 @@ export default function SearchRecipeGrid({
 
   useEffect(() => {
     const fetchHybridRecipes = async () => {
-      console.log('--- Hybrid Fetch Start ---');
-      
-      // DIAGNOSTIC LOG: Check Auth Status before fetching
-      supabaseClient.auth.getSession().then(({ data }) => {
-        console.log(`Fetch Invoked as: ${data.session?.user ? `User (${data.session.user.email})` : 'Anonymous Guest'}`);
-      });
-      
       setLoading(true);
       setDbError(null);
       
       const supUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-      console.log(`DB Health Check: URL=${supUrl.substring(0, 12)}...${supUrl.substring(supUrl.length - 5)}`);
 
-      // Check if URL is present (simplest connection test)
       if (!supUrl) {
         setDbError('DATABASE CONFIG MISSING: NEXT_PUBLIC_SUPABASE_URL is not set in Vercel.');
         setLoading(false);
@@ -176,13 +165,18 @@ export default function SearchRecipeGrid({
         const dbOffset = (currentPage - 1) * DB_COUNT;
         const apiOffset = (currentPage - 1) * API_COUNT;
 
+        // Fetch from server-side API route (bypasses Supabase RLS)
+        const dbFetchPromise = fetch(
+          `/api/recipes?q=${encodeURIComponent(searchQuery)}&category=${category}&limit=${DB_COUNT}&offset=${dbOffset}`
+        ).then(r => r.json()).then(j => j.recipes || []).catch(err => {
+          console.error('DB API fetch failure:', err);
+          return [];
+        });
+
         // Race our data fetching against the safety timeout
         const [dbResults, apiResults] = await Promise.race([
           Promise.all([
-            searchLocalRecipes(searchQuery, category, DB_COUNT, dbOffset).catch(err => {
-              console.error('DB fetch failure:', err);
-              throw err; // Let it hit the catch block for diagnostics
-            }),
+            dbFetchPromise,
             (searchQuery.trim() 
               ? searchRecipes(searchQuery, API_COUNT, apiOffset)
               : searchRecipesByCategory(category, API_COUNT, apiOffset)
@@ -218,12 +212,9 @@ export default function SearchRecipeGrid({
         if (combined.length < RECIPES_PER_PAGE && (dbResults?.length || 0) > 0) {
           console.log(`Grid under-filled (${combined.length}/${RECIPES_PER_PAGE}). Fetching more from DB...`);
           const missingCount = RECIPES_PER_PAGE - combined.length;
-          const additionalDbResults = await searchLocalRecipes(
-            searchQuery, 
-            category, 
-            missingCount, 
-            dbOffset + DB_COUNT
-          ).catch(() => []);
+          const additionalDbResults = await fetch(
+            `/api/recipes?q=${encodeURIComponent(searchQuery)}&category=${category}&limit=${missingCount}&offset=${dbOffset + DB_COUNT}`
+          ).then(r => r.json()).then(j => j.recipes || []).catch(() => []);
 
           if (additionalDbResults.length > 0) {
             const normalizedExtra = additionalDbResults.map((r: any) => ({
@@ -258,7 +249,10 @@ export default function SearchRecipeGrid({
 
         // Recovery: fill with whatever local recipes we have immediately
         try {
-          const localOnly = await searchLocalRecipes(searchQuery, category, RECIPES_PER_PAGE, (currentPage - 1) * RECIPES_PER_PAGE);
+          const localJson = await fetch(
+            `/api/recipes?q=${encodeURIComponent(searchQuery)}&category=${category}&limit=${RECIPES_PER_PAGE}&offset=${(currentPage - 1) * RECIPES_PER_PAGE}`
+          ).then(r => r.json()).catch(() => ({ recipes: [] }));
+          const localOnly = localJson.recipes || [];
           if (localOnly && localOnly.length > 0) {
              const normalized = localOnly.map((r: any) => ({
               ...r,
