@@ -44,15 +44,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const supabase = getSupabaseServer();
 
     // Only select 'id' — avoids errors if 'slug' column doesn't exist
-    let allRecipes: { id: string; updated_at?: string; created_at?: string }[] = [];
+    let allRecipes: { id: string }[] = [];
     let from = 0;
     const batchSize = 1000;
 
     while (true) {
       const { data, error } = await supabase
         .from('recipes')
-        .select('id, updated_at, created_at')
-        .order('created_at', { ascending: false })
+        .select('id')
         .range(from, from + batchSize - 1);
 
       if (error) {
@@ -71,10 +70,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.log(`[sitemap] Found ${allRecipes.length} recipes in Supabase`);
 
     recipeRoutes = allRecipes.map((recipe) => {
-      const lastMod = recipe.updated_at || recipe.created_at;
       return {
         url: `${SITE_URL}/recipe/${recipe.id}`,
-        lastModified: lastMod ? new Date(lastMod) : new Date(),
+        lastModified: new Date(),
         changeFrequency: 'weekly' as const,
         priority: 0.8,
       };
