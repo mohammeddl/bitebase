@@ -230,16 +230,6 @@ export default function AIChefPage() {
             </p>
           </div>
 
-          {/* Usage indicator */}
-          {remaining > 0 && (
-            <div className="flex justify-center mb-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-100 rounded-full text-sm font-semibold text-amber-700">
-                <Flame size={14} className="text-amber-500" />
-                {remaining} of {DAILY_LIMIT} free generations remaining today
-              </div>
-            </div>
-          )}
-
           {/* Generator Form OR Limit Reached */}
           {remaining > 0 ? (
             <div className="bg-white p-2 sm:p-4 rounded-[3rem] border border-gray-100 shadow-xl shadow-gray-200/40 mb-20">
