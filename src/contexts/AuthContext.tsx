@@ -47,16 +47,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const initAuth = async () => {
+      // Safety net: ensure loading is never stuck forever
+      const safetyTimeout = setTimeout(() => {
+        if (mounted) setIsLoading(false);
+      }, 8000);
+
       try {
         setIsLoading(true);
         const { data: { session } } = await supabaseClient.auth.getSession();
 
         if (session?.user && mounted) {
-          // 1. Start with session data as a base
+          // 1. Set user immediately from session data
           const initialUser = userFromSession(session.user);
           setUser(initialUser);
 
-          // 2. ✅ Await DB enrichment to get the correct role
+          // 2. Await DB enrichment to get the correct role (admin vs user)
           try {
             const profile = await authUtils.getUserProfile(session.user.id);
             if (profile && mounted) {
@@ -76,13 +81,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error('[AuthContext] Auth initialization failed:', err);
       } finally {
+        clearTimeout(safetyTimeout);
         if (mounted) setIsLoading(false);
       }
     };
 
     initAuth();
 
-    // Subscribe to real-time auth changes
+    // Subscribe to real-time auth changes.
+    // IMPORTANT: This handler does NOT touch isLoading — that is only
+    // managed by initAuth and the explicit login/logout functions.
+    // Keeping isLoading out of this handler prevents the infinite loop
+    // where login() sets isLoading(false) but this async handler runs
+    // concurrently without resetting it.
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
@@ -90,21 +101,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const initialUser = userFromSession(session.user);
         setUser(initialUser);
 
-        // Enrichment
-        try {
-          const profile = await authUtils.getUserProfile(session.user.id);
+        // Silently enrich with DB profile in the background
+        authUtils.getUserProfile(session.user.id).then((profile) => {
           if (profile && mounted) {
             setUser({
-              id: session.user.id,
+              id: session.user!.id,
               full_name: profile.full_name || initialUser.full_name,
               email: profile.email || initialUser.email,
               avatar_url: profile.avatar_url || initialUser.avatar_url,
               role: profile.role || 'user',
             });
           }
-        } catch (err) {
-          console.error('[AuthContext] Auth change profile sync failed:', err);
-        }
+        }).catch((err) => {
+          console.error('[AuthContext] onAuthStateChange profile sync failed:', err);
+        });
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
@@ -117,25 +127,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      await authUtils.signInWithEmail(email, password);
-      const { data: { user: authUser } } = await supabaseClient.auth.getUser();
-      if (authUser) {
-        const profile = await authUtils.getUserProfile(authUser.id);
-        if (profile) {
-          setUser({
-            id: authUser.id,
-            full_name: profile.full_name || '',
-            email: profile.email || '',
-            avatar_url: profile.avatar_url || null,
-            role: profile.role || 'user',
-          });
-        }
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    // setIsLoading is intentionally NOT called here.
+    // signInWithEmail will trigger onAuthStateChange, which immediately
+    // sets the user (with role) without conflicting with the loading state.
+    await authUtils.signInWithEmail(email, password);
+    // User state will be updated by the onAuthStateChange handler.
   };
 
   const register = async (name: string, email: string, password: string) => {
