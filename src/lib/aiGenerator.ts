@@ -1,7 +1,15 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { supabaseAdmin } from './supabaseClient';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || "");
+// API key rotation to handle rate limits
+const API_KEYS = [
+  process.env.GOOGLE_GEMINI_API_KEY,
+  process.env.GOOGLE_GEMINI_API_KEY_2,
+  process.env.GOOGLE_GEMINI_API_KEY_3,
+].filter(Boolean) as string[];
+
+// Working models as of April 2026 - gemini-flash-latest is the stable alias
+const MODELS = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"];
 
 export interface GenerationResult {
   created: number;
@@ -13,8 +21,8 @@ export interface GenerationResult {
  * Generates and stores AI recipes in the database
  */
 export async function generateAiRecipes(count: number = 1, theme: string = 'any'): Promise<GenerationResult> {
-  if (!process.env.GOOGLE_GEMINI_API_KEY) {
-    throw new Error('Gemini API Key missing');
+  if (!API_KEYS.length) {
+    throw new Error('No Gemini API Keys configured');
   }
 
   if (!supabaseAdmin) {
@@ -43,54 +51,59 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
     }
 
     try {
-      const fallbackModels = ["gemini-1.5-flash", "gemini-pro", "gemini-1.5-flash-8b"];
-      let chatResult;
-      
-      // Try models in sequence if they fail
-      for (const modelName of fallbackModels) {
-        try {
-          const model = genAI.getGenerativeModel({ model: modelName });
-          
-          // 1. Generate full recipe data using Gemini
-          // Added a random seed to prevent duplicates and variety
-          const randomSeed = Math.floor(Math.random() * 1000000);
-          const prompt = `
-            You are a Michelin-star chef. Create a unique, delicious, and professional recipe.
-            Theme: ${theme === 'any' ? 'Surprise me with something creative' : theme}
-            Random Seed: ${randomSeed}
-            
-            Respond ONLY with a valid JSON object in this exact format:
-            {
-              "title": "Recipe Name",
-              "description": "Short appetizing description",
-              "cook_time": "X mins",
-              "prep_time": "X mins",
-              "servings": "X",
-              "difficulty": "Easy/Medium/Hard",
-              "cuisine": "Cuisine type",
-              "ingredients": [
-                {"name": "ingredient name", "amount": "amount", "unit": "unit", "original": "full original line"}
-              ],
-              "instructions": [
-                {"number": 1, "step": "step description"}
-              ],
-              "nutrition": {
-                "calories": "X kcal",
-                "protein": "Xg",
-                "carbs": "Xg",
-                "fat": "Xg"
-              }
-            }
-          `;
-          
-          chatResult = await model.generateContent(prompt);
-          break; // Break loop if successful
-        } catch (e: any) {
-          console.warn(`Model ${modelName} failed:`, e.message);
-          if (modelName === fallbackModels[fallbackModels.length - 1]) {
-             throw new Error(`All models failed. Last error: ${e.message}`);
+      // Build the prompt once (random seed keeps recipes unique)
+      const randomSeed = Math.floor(Math.random() * 1000000);
+      const prompt = `
+        You are a Michelin-star chef. Create a unique, delicious, and professional recipe.
+        Theme: ${theme === 'any' ? 'Surprise me with something creative' : theme}
+        Random Seed: ${randomSeed}
+        
+        Respond ONLY with a valid JSON object in this exact format, no extra text:
+        {
+          "title": "Recipe Name",
+          "description": "Short appetizing description",
+          "cook_time": "X mins",
+          "prep_time": "X mins",
+          "servings": "X",
+          "difficulty": "Easy/Medium/Hard",
+          "cuisine": "Cuisine type",
+          "ingredients": [
+            {"name": "ingredient name", "amount": "amount", "unit": "unit", "original": "full original line"}
+          ],
+          "instructions": [
+            {"number": 1, "step": "step description"}
+          ],
+          "nutrition": {
+            "calories": "X kcal",
+            "protein": "Xg",
+            "carbs": "Xg",
+            "fat": "Xg"
           }
         }
+      `;
+
+      // Try all model+key combinations until one works
+      const fallbackModels = MODELS;
+      let chatResult;
+      
+      for (const modelName of fallbackModels) {
+        let modelSucceeded = false;
+        for (const apiKey of API_KEYS) {
+          try {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: modelName });
+            chatResult = await model.generateContent(prompt);
+            modelSucceeded = true;
+            break; // Key worked, move on
+          } catch (e: any) {
+            console.warn(`Model ${modelName} / key ...${apiKey.slice(-4)} failed:`, e.message);
+          }
+        }
+        if (modelSucceeded) break; // Model worked, stop trying others
+      }
+
+      if (!chatResult) {
+        throw new Error('All Gemini models and API keys failed. Check quotas.');
       }
 
       let recipeData;
