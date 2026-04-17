@@ -64,12 +64,7 @@ function RecipeCard({ recipe }: { recipe: Recipe | SpoonacularRecipe }) {
           className="absolute top-0 left-0 right-0 p-5"
           style={{ opacity: 0, transform: 'translateY(-20px)' }}
         >
-          <h3 className="text-xl font-black text-white leading-tight group-hover:text-amber-400 transition-colors">{recipe.title}</h3>
-          {(recipe as any).isLocal && (
-            <span className="inline-block mt-2 px-3 py-1 bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
-              Community
-            </span>
-          )}
+          <h3 className="text-xl font-black text-white leading-tight transition-colors">{recipe.title}</h3>
         </div>
 
         {/* Bottom: tags + button */}
