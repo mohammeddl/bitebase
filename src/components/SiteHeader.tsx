@@ -49,7 +49,8 @@ export default function SiteHeader() {
           <div className="flex h-16 items-center justify-between gap-4">
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-1 shrink-0">
+            <Link href="/" className="flex items-center gap-2 shrink-0">
+              <Image src="/logo.png" alt="BiteBase Logo" width={36} height={36} className="object-contain" />
               <span className="text-2xl font-black tracking-tight text-gray-900">
                 BITE<span className="text-amber-500">BASE</span>
               </span>
@@ -210,9 +211,12 @@ export default function SiteHeader() {
           >
             {/* Drawer header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-              <span className="text-xl font-black text-gray-900">
-                BITE<span className="text-amber-500">BASE</span>
-              </span>
+              <div className="flex items-center gap-2">
+                <Image src="/logo.png" alt="BiteBase Logo" width={32} height={32} className="object-contain" />
+                <span className="text-xl font-black text-gray-900">
+                  BITE<span className="text-amber-500">BASE</span>
+                </span>
+              </div>
               <button
                 onClick={() => setBurgerOpen(false)}
                 className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
