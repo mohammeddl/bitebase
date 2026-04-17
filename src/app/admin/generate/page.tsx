@@ -10,7 +10,8 @@ import {
   Loader2, 
   ChefHat, 
   ArrowRight,
-  RefreshCw,
+  RefreshCw
+} from 'lucide-react';
 import Swal from 'sweetalert2';
 import { CATEGORIES } from '@/components/CategoryFilter';
 
