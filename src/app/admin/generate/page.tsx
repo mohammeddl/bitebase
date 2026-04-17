@@ -11,9 +11,8 @@ import {
   ChefHat, 
   ArrowRight,
   RefreshCw,
-  PlusCircle
-} from 'lucide-react';
 import Swal from 'sweetalert2';
+import { CATEGORIES } from '@/components/CategoryFilter';
 
 export default function AIGeneratorPage() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -150,13 +149,13 @@ export default function AIGeneratorPage() {
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-amber-500/50 text-white placeholder-gray-600 transition-all font-medium"
                   />
                   <div className="flex gap-2 mt-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {['Fine Dining', 'Quick Snacks', 'Dessert', 'Vegan'].map(t => (
+                    {CATEGORIES.filter(c => c.value !== 'all').map(cat => (
                       <button 
-                        key={t}
-                        onClick={() => setTheme(t)}
+                        key={cat.value}
+                        onClick={() => setTheme(cat.label)}
                         className="px-3 py-1 bg-gray-800 rounded-full text-[10px] text-gray-400 border border-gray-700 hover:text-amber-500 transition-colors whitespace-nowrap"
                       >
-                        {t}
+                        {cat.label}
                       </button>
                     ))}
                   </div>
