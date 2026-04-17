@@ -84,6 +84,7 @@ async function getRecipe(slug: string) {
         instructions: finalInstructions,
         instructionImg: localRecipe.image,
         nutrition: nutritionMap,
+        videoUrl: localRecipe.video_url || null,
       };
     }
   } catch (error) {
@@ -150,6 +151,7 @@ async function getRecipe(slug: string) {
             : ['Follow the recipe instructions carefully.'],
           instructionImg: apiRecipe.image,
           nutrition: nutritionMap,
+          videoUrl: null,
         };
       }
     } catch (error) {
@@ -193,6 +195,7 @@ async function getRecipe(slug: string) {
     ],
     instructionImg: '/images/home/featured-dish.jpg',
     nutrition: { calories: 95, protein: '5g', fat: '6g', carbs: '4g', fiber: '1g', sugars: '3g' },
+    videoUrl: null,
   };
 }
 
@@ -321,6 +324,34 @@ export default async function RecipePage({ params }: Props) {
 
             {/* ── Left/Main Column ── */}
             <div className="lg:col-span-2">
+
+              {/* Recipe Video (Optional) */}
+              {recipe.videoUrl && (
+                <div data-gsap="fade-up" className="mb-10 relative overflow-hidden rounded-3xl w-full pt-[56.25%] shadow-lg border border-gray-100 bg-gray-950">
+                  {(() => {
+                    // Extract Video ID safely
+                    const getYoutubeId = (url: string) => {
+                      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                      const match = url.match(regExp);
+                      return (match && match[2].length === 11) ? match[2] : null;
+                    };
+                    const ytId = getYoutubeId(recipe.videoUrl);
+                    
+                    return ytId ? (
+                      <iframe 
+                        className="absolute top-0 left-0 w-full h-full"
+                        src={`https://www.youtube.com/embed/${ytId}?autoplay=0&rel=0`}
+                        title="YouTube video player" 
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen>
+                      </iframe>
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-white">Video unavailable</div>
+                    );
+                  })()}
+                </div>
+              )}
 
               {/* Description + tags */}
               <div data-gsap="fade-up" className="mb-10">
