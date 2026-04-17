@@ -69,8 +69,21 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
                 <li>Phone: (+555) 555-1234</li>
                 <li>Email: info@bitebase.com</li>
                 <li className="flex gap-3 pt-2">
-                  {['FB', 'IG', 'TW', 'YT'].map((s) => (
-                    <a key={s} href="#" className="w-8 h-8 bg-gray-800 hover:bg-amber-500 rounded-full flex items-center justify-center text-xs font-bold text-gray-300 hover:text-white transition">{s}</a>
+                  {[
+                    { label: 'FB', url: '#' },
+                    { label: 'IG', url: '#' },
+                    { label: 'TW', url: '#' },
+                    { label: 'YT', url: 'https://www.youtube.com/@bitebase-1' }
+                  ].map((s) => (
+                    <a 
+                      key={s.label} 
+                      href={s.url} 
+                      target={s.url !== '#' ? '_blank' : undefined}
+                      rel={s.url !== '#' ? 'noopener noreferrer' : undefined}
+                      className="w-8 h-8 bg-gray-800 hover:bg-amber-500 rounded-full flex items-center justify-center text-xs font-bold text-gray-300 hover:text-white transition"
+                    >
+                      {s.label}
+                    </a>
                   ))}
                 </li>
               </ul>
