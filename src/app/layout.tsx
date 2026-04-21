@@ -25,6 +25,7 @@ export const metadata: Metadata = {
     yandex: 'YANDEX_VERIFICATION_TOKEN_HERE',
     other: {
       'msvalidate.01': 'BING_VERIFICATION_TOKEN_HERE',
+      'p:domain_verify': 'f8ddf44f08a23f4116bb8364c99c1759',
     },
   },
   icons: {
