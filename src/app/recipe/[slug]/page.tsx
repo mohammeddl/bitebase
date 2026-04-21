@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { generateSEOMetadata, generateRecipeJsonLd, SITE_NAME } from '@/lib/seo';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import PageAnimations from '@/components/PageAnimations';
 import JsonLd from '@/components/JsonLd';
@@ -67,7 +68,7 @@ async function getRecipe(slug: string) {
       return {
         id: localRecipe.id,
         title: localRecipe.title,
-        slug: slug,
+        slug: localRecipe.slug || String(localRecipe.id),
         description: localRecipe.description || 'No description provided.',
         img: localRecipe.image,
         chefImg: '/images/home/chef-woman.jpg',
@@ -241,8 +242,16 @@ const cookingReviews = [
 ];
 
 export default async function RecipePage({ params }: Props) {
-  const { slug } = await params;
-  const recipe = await getRecipe(slug);
+  const { slug: urlSlug } = await params;
+  const recipe = await getRecipe(urlSlug);
+
+  // ── SEO Redirect: Old ID -> New Slug ─────────────────────────────────────
+  // If the URL has an ID (number) but the recipe has a slug (text),
+  // we 301 redirect (Permanent) to the nice URL.
+  if (urlSlug !== recipe.slug) {
+    redirect(`/recipe/${recipe.slug}`);
+  }
+
   const relatedRecipes = await getRelatedRecipes(recipe.title);
   const recipeJsonLd = generateRecipeJsonLd(recipe);
 

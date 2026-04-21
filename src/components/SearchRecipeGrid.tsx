@@ -40,7 +40,7 @@ function RecipeCard({ recipe }: { recipe: Recipe | SpoonacularRecipe }) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <Link href={`/recipe/${'slug' in recipe ? recipe.slug : recipe.id}`} className="block h-full w-full">
+      <Link href={`/recipe/${recipe.slug || recipe.id}`} className="block h-full w-full">
         {/* Background image */}
         <div ref={imageRef} className="absolute inset-0 will-change-transform">
           <Image 
