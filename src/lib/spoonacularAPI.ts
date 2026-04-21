@@ -289,28 +289,47 @@ export async function searchLocalRecipes(
 }
 
 /**
- * Get local recipe by ID
+ * Get local recipe by slug or numeric ID
+ * Tries slug first (SEO-friendly URLs), then falls back to numeric id
+ * for backward compatibility with old /recipe/9 style links.
  */
 export async function getLocalRecipeById(id: string | number): Promise<any | null> {
-  try {
-    const { data, error } = await supabaseClient
-      .from('recipes')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
+  const idStr = String(id);
+  const isNumeric = /^\d+$/.test(idStr);
 
-    if (error || !data) {
-      // Also try external_id just in case
+  try {
+    // 1. Try slug lookup first (for SEO URLs like /recipe/marry-me-chicken)
+    if (!isNumeric) {
+      const { data, error } = await supabaseClient
+        .from('recipes')
+        .select('*')
+        .eq('slug', idStr)
+        .maybeSingle();
+
+      if (!error && data) return data;
+    }
+
+    // 2. Try numeric id lookup (for old URLs like /recipe/9)
+    if (isNumeric) {
+      const { data, error } = await supabaseClient
+        .from('recipes')
+        .select('*')
+        .eq('id', Number(idStr))
+        .maybeSingle();
+
+      if (!error && data) return data;
+
+      // 3. Fallback: try external_id
       const { data: extData, error: extError } = await supabaseClient
         .from('recipes')
         .select('*')
-        .eq('external_id', Number(id))
+        .eq('external_id', Number(idStr))
         .maybeSingle();
-        
-      if (extError || !extData) return null;
-      return extData;
+
+      if (!extError && extData) return extData;
     }
-    return data;
+
+    return null;
   } catch (error) {
     console.error(`Error fetching local recipe ${id}:`, error);
     return null;
