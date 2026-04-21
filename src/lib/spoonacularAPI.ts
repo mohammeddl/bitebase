@@ -4,6 +4,7 @@ import { supabaseClient } from './supabaseClient';
 // Types for Spoonacular API
 export interface SpoonacularRecipe {
   id: number;
+  slug?: string;
   title: string;
   image: string;
   vegetarian: boolean;
