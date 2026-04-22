@@ -157,10 +157,16 @@ export async function generateAiRecipes(count: number = 1, theme: string = 'any'
       }
 
       // 3. Save to Database
+      const slug = (recipeData.title || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
       const { data: inserted, error: dbError } = await supabaseAdmin!
         .from('recipes')
         .insert([{
           title: recipeData.title,
+          slug: slug,
           image: finalImageUrl,
           description: recipeData.description,
           cook_time: recipeData.cook_time,
