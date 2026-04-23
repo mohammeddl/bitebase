@@ -50,7 +50,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const { data, error } = await dbQuery.order('created_at', { ascending: false });
+    const { data, error } = await dbQuery
+      // Recipes WITH a video_url come first, then newest
+      .order('video_url', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('[api/recipes] Supabase error:', error.message);
