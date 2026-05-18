@@ -374,6 +374,15 @@ export default async function RecipePage({ params }: Props) {
                 </div>
               </div>
 
+
+              {/* ── Ezoic Ad Placement 101 (Below description) ─────────── */}
+              <div id="ezoic-pub-ad-placeholder-101" />
+              <script
+                dangerouslySetInnerHTML={{
+                  __html: `ezstandalone.cmd.push(function() { ezstandalone.showAds(101); });`,
+                }}
+              />
+
               {/* Ingredients (inline, 2-col) */}
               <div data-gsap="fade-up" className="mb-10">
                 <h2 className="text-xl font-black text-gray-900 mb-4">Ingredients</h2>
@@ -392,6 +401,15 @@ export default async function RecipePage({ params }: Props) {
                 <h2 className="text-xl font-black text-gray-900 mb-6">
                   Cooking <span className="text-amber-500">Instructions</span>
                 </h2>
+
+                {/* ── Ezoic Ad Placement 102 (Before instructions) ─────── */}
+                <div id="ezoic-pub-ad-placeholder-102" />
+                <script
+                  dangerouslySetInnerHTML={{
+                    __html: `ezstandalone.cmd.push(function() { ezstandalone.showAds(102); });`,
+                  }}
+                />
+
                 <ol className="space-y-6">
                   {recipe.instructions.map((step: string, i: number) => (
                     <li key={i} className="flex gap-5 items-start border-b border-gray-50 pb-5">
@@ -414,8 +432,13 @@ export default async function RecipePage({ params }: Props) {
                   />
                 </div>
 
-                {/* AdSense Ad Placement - Recipe Bottom */}
-                <AdUnit slot="recipe_main" className="mt-12" />
+                {/* ── Ezoic Ad Placement 103 (Bottom of recipe) ────────── */}
+                <div id="ezoic-pub-ad-placeholder-103" />
+                <script
+                  dangerouslySetInnerHTML={{
+                    __html: `ezstandalone.cmd.push(function() { ezstandalone.showAds(103); });`,
+                  }}
+                />
               </div>
 
               {/* Cooking Reviews */}
