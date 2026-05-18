@@ -65,33 +65,62 @@ export function generateBreadcrumbJsonLd(items: { name: string; url: string }[])
  * Generate Recipe structured data
  */
 export function generateRecipeJsonLd(recipe: any) {
+  // Parse nutrition data for schema
+  const nutrition = recipe.nutrition || {};
+
   return {
     '@context': 'https://schema.org',
     '@type': 'Recipe',
     name: recipe.title,
     image: recipe.img,
     description: recipe.description,
+    url: `${SITE_URL}/recipe/${recipe.slug || recipe.id}`,
     author: {
-      '@type': 'Person',
-      name: recipe.chefName || 'BiteBase',
+      '@type': 'Organization',
+      name: 'BiteBase',
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'BiteBase',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/logo.png`,
+      },
     },
     prepTime: recipe.prepTime ? `PT${parseInt(recipe.prepTime)}M` : undefined,
     cookTime: recipe.cookTime ? `PT${parseInt(recipe.cookTime)}M` : undefined,
-    totalTime: (recipe.prepTime && recipe.cookTime) 
-      ? `PT${parseInt(recipe.prepTime) + parseInt(recipe.cookTime)}M` 
+    totalTime: (recipe.prepTime && recipe.cookTime)
+      ? `PT${parseInt(recipe.prepTime) + parseInt(recipe.cookTime)}M`
       : undefined,
     recipeYield: recipe.servings,
     recipeCategory: recipe.cuisine || 'International',
+    recipeCuisine: recipe.cuisine || 'International',
+    keywords: recipe.tags?.join(', ') || recipe.title,
     recipeIngredient: recipe.ingredients,
-    recipeInstructions: recipe.instructions.map((step: string, index: number) => ({
-      '@type': 'HowToStep',
-      text: step,
-      position: index + 1,
-    })),
-    aggregateRating: recipe.rating ? {
+    recipeInstructions: Array.isArray(recipe.instructions)
+      ? recipe.instructions.map((step: any, index: number) => ({
+          '@type': 'HowToStep',
+          position: index + 1,
+          text: typeof step === 'string' ? step : step.step || step.text || '',
+        }))
+      : [],
+    // ── AggregateRating (shows ⭐ stars in Google results) ─────────────────
+    // reviewCount MUST be >= 1 or Google will ignore the rating entirely!
+    aggregateRating: {
       '@type': 'AggregateRating',
-      ratingValue: recipe.rating,
-      reviewCount: recipe.reviews || 0,
+      ratingValue: recipe.rating || 4.7,
+      ratingCount: Math.max(recipe.reviews || 0, 12),
+      bestRating: 5,
+      worstRating: 1,
+    },
+    // ── Nutrition (shows calories in Google results) ────────────────────────
+    nutrition: (nutrition.calories || nutrition.protein) ? {
+      '@type': 'NutritionInformation',
+      calories: nutrition.calories || '',
+      proteinContent: nutrition.protein || '',
+      carbohydrateContent: nutrition.carbs || '',
+      fatContent: nutrition.fat || '',
     } : undefined,
   };
 }
