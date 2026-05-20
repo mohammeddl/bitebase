@@ -53,23 +53,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* ── Ezoic Privacy Scripts (MUST load first) ──────────────────── */}
-        <script data-cfasync="false" src="https://cmp.gatekeeperconsent.com/min.js" />
-        <script data-cfasync="false" src="https://the.gatekeeperconsent.com/cmp.min.js" />
-
-        {/* ── Ezoic Header Script ───────────────────────────────────────── */}
-        <script async src="//www.ezojs.com/ezoic/sa.min.js" />
         <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.ezstandalone = window.ezstandalone || {};
-              ezstandalone.cmd = ezstandalone.cmd || [];
-            `,
-          }}
-        />
-
-        {/* ── Ezoic Analytics ──────────────────────────────────────────── */}
-        <script src="//ezoicanalytics.com/analytics.js" />
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6243314131851417"
+          crossOrigin="anonymous"
+        ></script>
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col" style={{ background: '#FFFBF5', fontFamily: "'Inter', sans-serif" }}>
         <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_ID || ''} />

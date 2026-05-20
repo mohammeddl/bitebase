@@ -99,12 +99,31 @@ export function generateRecipeJsonLd(recipe: any) {
     keywords: recipe.tags?.join(', ') || recipe.title,
     recipeIngredient: recipe.ingredients,
     recipeInstructions: Array.isArray(recipe.instructions)
-      ? recipe.instructions.map((step: any, index: number) => ({
-          '@type': 'HowToStep',
-          position: index + 1,
-          text: typeof step === 'string' ? step : step.step || step.text || '',
-        }))
+      ? recipe.instructions.map((step: any, index: number) => {
+          const stepText = typeof step === 'string' ? step : step.step || step.text || '';
+          const stepNum = index + 1;
+          return {
+            '@type': 'HowToStep',
+            // Fix 1: "name" is required in recipeInstructions
+            name: `Step ${stepNum}`,
+            // Fix 2: "text" with the actual step content
+            text: stepText,
+            position: stepNum,
+            // Fix 3: "url" is required in recipeInstructions
+            url: `${SITE_URL}/recipe/${recipe.slug || recipe.id}#step-${stepNum}`,
+            // Fix 4: "image" should be specified in recipeInstructions
+            image: recipe.img || '',
+          };
+        })
       : [],
+    // Fix: "video" field at recipe level (optional but recommended)
+    video: recipe.videoUrl ? {
+      '@type': 'VideoObject',
+      name: recipe.title,
+      description: recipe.description,
+      thumbnailUrl: recipe.img,
+      contentUrl: recipe.videoUrl,
+    } : undefined,
     // ── AggregateRating (shows ⭐ stars in Google results) ─────────────────
     // reviewCount MUST be >= 1 or Google will ignore the rating entirely!
     aggregateRating: {
